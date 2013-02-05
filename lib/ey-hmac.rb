@@ -6,38 +6,36 @@ require 'openssl'
 
 module Ey
   module Hmac
-    autoload :Signer, "ey-hmac/signer"
+    autoload :Adapter, "ey-hmac/adapter"
 
-    def self.default_reader=(default_reader)
-      @default_reader = default_reader
+    def self.default_adapter=(default_adapter)
+      @default_adapter = default_adapter
     end
 
-    def self.default_reader
-      @@default_reader
-    end
-
-    def self.default_signer=(default_signer)
-      @default_signer = default_signer
-    end
-
-    def self.default_signer
-      @@default_signer
+    def self.default_adapter
+      @default_adapter ||= begin
+                             if defined?(Rack) || defined?(Rails)
+                               Ey::Hmac::Adapter::Rack
+                             elsif defined?(Faraday)
+                               Ey::Hmac::Adapter::Rails
+                             end
+                           end
     end
 
     def self.sign!(request, key_id, key_secret, options={})
-      signer = options[:signer] || Ey::Hmac.default_signer
+      adapter = options[:adapter] || Ey::Hmac.default_adapter
 
-      raise ArgumentError, "Missing signer and Ey::Hmac.default_signer" unless signer
+      raise ArgumentError, "Missing adapter and Ey::Hmac.default_adapter" unless adapter
 
-      signer.new(request, options).sign!(key_id, key_secret)
+      adapter.new(request, options).sign!(key_id, key_secret)
     end
 
     def self.authenticated?(request, options={}, &block)
-      reader = options[:reader] || Ey::Hmac.default_reader
+      adapter = options[:adapter] || Ey::Hmac.default_adapter
 
-      raise ArgumentError, "Missing reader and Ey::Hmac.default_reader" unless reader
+      raise ArgumentError, "Missing adapter and Ey::Hmac.default_adapter" unless adapter
 
-      reader.new(request, options).authenticated?(&block)
+      adapter.new(request, options).authenticated?(&block)
     end
   end
 end

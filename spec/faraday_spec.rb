@@ -5,7 +5,7 @@ describe "faraday" do
 
   let!(:key_id)     { (0...8).map{ 65.+(rand(26)).chr}.join }
   let!(:key_secret) { (0...16).map{ 65.+(rand(26)).chr}.join }
-  let!(:adapter)    { Ey::Hmac::Signer::Faraday }
+  let!(:adapter)    { Ey::Hmac::Adapter::Faraday }
   let!(:request) do 
     Faraday::Request.new.tap do |r|
       r.method = :get
@@ -17,7 +17,7 @@ describe "faraday" do
   end
 
   it "should sign and read request" do
-    Ey::Hmac.sign!(request, key_id, key_secret, signer: adapter)
+    Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
     request.headers['Authorization'].should start_with("EyHmac")
     request.headers['Content-Digest'].should == Digest::MD5.hexdigest(request.body)
@@ -25,7 +25,7 @@ describe "faraday" do
 
     yielded = false
 
-    Ey::Hmac.authenticated?(request, reader: adapter) do |key_id|
+    Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
       key_id.should == key_id
       yielded = true
       key_secret

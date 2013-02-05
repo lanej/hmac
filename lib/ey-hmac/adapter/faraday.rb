@@ -1,4 +1,4 @@
-class Ey::Hmac::Signer::Faraday < Ey::Hmac::Signer
+class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   def method
     request.method
   end

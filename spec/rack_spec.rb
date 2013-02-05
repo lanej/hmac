@@ -6,7 +6,7 @@ describe "rack" do
 
   let!(:key_id)     { (0...8).map{ 65.+(rand(26)).chr}.join }
   let!(:key_secret) { (0...16).map{ 65.+(rand(26)).chr}.join }
-  let(:adapter)     { Ey::Hmac::Signer::Rack }
+  let(:adapter)     { Ey::Hmac::Adapter::Rack }
   let(:request)     {
     Rack::Request.new({
       "rack.input" => StringIO.new("{1: 2}"),
@@ -15,7 +15,7 @@ describe "rack" do
   }
 
   it "should sign and read request" do
-    Ey::Hmac.sign!(request, key_id, key_secret, signer: adapter)
+    Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
     request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
     request.env['HTTP_CONTENT_DIGEST'].should == Digest::MD5.hexdigest(request.body.tap(&:rewind).read)
@@ -23,7 +23,7 @@ describe "rack" do
 
     yielded = false
 
-    Ey::Hmac.authenticated?(request, reader: adapter) do |key_id|
+    Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
       key_id.should == key_id
       yielded = true
       key_secret

@@ -1,10 +1,10 @@
 # This class is responsible for forming the canonical string to used to sign requests
 # @abstract override methods {#method}, {#path}, {#body}, {#content_type} and {#content_digest}
-class Ey::Hmac::Signer
+class Ey::Hmac::Adapter
   AUTHORIZATION_REGEXP = /\w+ ([^:]+):(.+)$/
 
-  autoload :Rack, "ey-hmac/signer/rack"
-  autoload :Faraday, "ey-hmac/signer/faraday"
+  autoload :Rack, "ey-hmac/adapter/rack"
+  autoload :Faraday, "ey-hmac/adapter/faraday"
 
   attr_reader :request, :options, :authorization_header, :service
 
