@@ -7,5 +7,14 @@ group(:test) do
   gem 'rb-fsevent'
   gem 'guard-bundler'
   gem 'guard-rspec'
+  gem 'pry-nav'
+end
+
+group(:rack) do
   gem 'rack'
+end
+
+group(:faraday) do
+  gem 'faraday'
+  gem 'faraday_middleware'
 end

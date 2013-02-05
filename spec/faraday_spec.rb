@@ -1,18 +1,25 @@
 require 'spec_helper'
 
-
-describe "rack" do
-  before(:all) { Bundler.require(:rack) }
+describe "faraday" do
+  before(:all) { Bundler.require(:faraday) }
 
   let!(:key_id)     { (0...8).map{ 65.+(rand(26)).chr}.join }
   let!(:key_secret) { (0...16).map{ 65.+(rand(26)).chr}.join }
-  let(:request)     { Rack::Request.new(Hash.new) }
-  let(:adapter)     { Ey::Hmac::Signer::Rack }
+  let!(:adapter)    { Ey::Hmac::Signer::Faraday }
+  let!(:request) do 
+    Faraday::Request.new.tap do |r|
+      r.method = :get
+      r.path = "/auth"
+      r.params = {"x" => "1"}
+      r.body = "{1: 2}"
+      r.headers = {"Content-Type" => "application/xml"}
+    end
+  end
 
   it "should sign and read request" do
     Ey::Hmac.sign!(request, key_id, key_secret, signer: adapter)
 
-    request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
+    request.headers['Authorization'].should start_with("EyHmac")
 
     yielded = false
 
@@ -25,3 +32,4 @@ describe "rack" do
     yielded.should be_true
   end
 end
+

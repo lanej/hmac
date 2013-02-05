@@ -7,7 +7,6 @@ require 'openssl'
 module Ey
   module Hmac
     autoload :Signer, "ey-hmac/signer"
-    autoload :Reader, "ey-hmac/reader"
 
     def self.default_reader=(default_reader)
       @default_reader = default_reader

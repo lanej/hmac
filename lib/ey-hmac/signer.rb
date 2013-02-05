@@ -2,7 +2,9 @@
 # @abstract override methods {#request_method}, {#path}, {#body}, {#headers} to fulfill contract
 class Ey::Hmac::Signer
   AUTHORIZATION_REGEXP = /\w+ ([^:]+):(.+)$/
+
   autoload :Rack, "ey-hmac/signer/rack"
+  autoload :Faraday, "ey-hmac/signer/faraday"
 
   attr_reader :request, :options, :authorization_header, :service
 
@@ -79,10 +81,20 @@ class Ey::Hmac::Signer
     raise NotImplementedError
   end
 
+  # @abstract
+  # @return [String] value of the {#authorization_header}
   def authorization_signature
     raise NotImplementedError
   end
 
+  # Check {#authorization_signature} against calculated {#signature}
+  # @example
+  #   Ey::Hmac.authenticated? do |key_id|
+  #     @consumer = Consumer.where(auth_id: key_id).first
+  #     @consumer && @consumer.auth_key
+  #   end
+  # @yieldparams key_id [String] public HMAC key
+  # @return [Boolean] true if block yields matching private key and signature matches, else false
   def authenticated?(&block)
     if authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
       key_id          = authorization_match[1]

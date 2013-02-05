@@ -36,7 +36,7 @@ class Ey::Hmac::Signer::Rack < Ey::Hmac::Signer
 
   def sign!(key_id, key_secret)
     if options[:version]
-      request.env['HTTP_SIGNATURE_VERSION'] = options[:version]
+      request.env['HTTP_X_SIGNATURE_VERSION'] = options[:version]
     end
 
     request.env["HTTP_#{authorization_header.to_s.upcase}"] = authorization(key_id, key_secret)
