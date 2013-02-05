@@ -12,6 +12,7 @@ end
 
 group(:rack) do
   gem 'rack'
+  gem 'rack-test'
 end
 
 group(:faraday) do

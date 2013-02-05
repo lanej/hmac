@@ -1,7 +1,9 @@
+require 'rack'
+
 class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
   def initialize(request, options)
     super
-    @request = Rack::Request.new(request) if request.is_a?(Hash)
+    @request = ::Rack::Request.new(request) if request.is_a?(Hash)
   end
 
   def method
@@ -21,7 +23,7 @@ class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
       request.env["rack.input"].rewind
       body = request.env["rack.input"].read
       request.env["rack.input"].rewind
-      body
+      body == "" ? nil : body
     else nil
     end
   end

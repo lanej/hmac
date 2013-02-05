@@ -7,6 +7,7 @@ require 'openssl'
 module Ey
   module Hmac
     autoload :Adapter, "ey-hmac/adapter"
+    autoload :Faraday, "ey-hmac/faraday"
 
     def self.default_adapter=(default_adapter)
       @default_adapter = default_adapter
