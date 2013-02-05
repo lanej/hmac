@@ -76,7 +76,7 @@ class Ey::Hmac::Adapter
 
   # @abstract
   # @return [String] value of the Date header in {#request}.
-  # @see {Time#http_date}
+  # @see Time#http_date
   def date
     raise NotImplementedError
   end
@@ -89,6 +89,8 @@ class Ey::Hmac::Adapter
 
   # @abstract
   # Add {#signature} header to request. Typically this is 'Authorization' or 'WWW-Authorization'
+  # @return [String] calculated {#authorization}
+  # @see Ey::Hmac#sign!
   def sign!(key_id, key_secret)
     raise NotImplementedError
   end
@@ -96,17 +98,14 @@ class Ey::Hmac::Adapter
   # Check {#authorization_signature} against calculated {#signature}
   # @yieldparam key_id [String] public HMAC key
   # @return [Boolean] true if block yields matching private key and signature matches, else false
-  # @see {#authenticated!}
+  # @see #authenticated!
   def authenticated?(&block)
     authenticated!(&block)
   rescue Ey::Hmac::Error
     false
   end
 
-  # Check {#authorization_signature} against calculated {#signature}
-  # @yieldparam key_id [String] public HMAC key
-  # @return [Boolean] true if block yields matching private key
-  # @raise [Ey::Hmac::Error] if authentication fails
+  # @see Ey::Hmac#authenticate!
   def authenticated!(&block)
     if authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
       key_id          = authorization_match[1]
