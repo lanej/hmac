@@ -6,6 +6,12 @@ require 'openssl'
 
 module Ey
   module Hmac
+    Error = Class.new(StandardError)
+
+    MissingSecret        = Class.new(Error)
+    MissingAuthorization = Class.new(Error)
+    SignatureMismatch    = Class.new(Error)
+
     autoload :Adapter, "ey-hmac/adapter"
     autoload :Faraday, "ey-hmac/faraday"
     autoload :Rack, "ey-hmac/rack"
@@ -41,7 +47,6 @@ module Ey
       adapter.new(request, options).sign!(key_id, key_secret)
     end
 
-
     # @example
     #   Ey::Hmac.authenticated? do |key_id|
     #     @consumer = Consumer.where(auth_id: key_id).first
@@ -56,6 +61,22 @@ module Ey
       raise ArgumentError, "Missing adapter and Ey::Hmac.default_adapter" unless adapter
 
       adapter.new(request, options).authenticated?(&block)
+    end
+
+    # @example
+    #   Ey::Hmac.authenticate! do |key_id|
+    #     @consumer = Consumer.where(auth_id: key_id).first
+    #     @consumer && @consumer.auth_key
+    #   end
+    # @param request [Hash] request environment
+    # @option options [Ey::Hmac::Adapter] :adapter ({#default_adapter}) adapter to verify request with
+    # @see {Ey::Hmac::Adapter#authenticate!}
+    def self.authenticate!(request, options={}, &block)
+      adapter = options[:adapter] || Ey::Hmac.default_adapter
+
+      raise ArgumentError, "Missing adapter and Ey::Hmac.default_adapter" unless adapter
+
+      adapter.new(request, options).authenticate!(&block)
     end
   end
 end

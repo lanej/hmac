@@ -96,15 +96,32 @@ class Ey::Hmac::Adapter
   # Check {#authorization_signature} against calculated {#signature}
   # @yieldparam key_id [String] public HMAC key
   # @return [Boolean] true if block yields matching private key and signature matches, else false
+  # @see {#authenticated!}
   def authenticated?(&block)
+    authenticated!(&block)
+  rescue Ey::Hmac::Error
+    false
+  end
+
+  # Check {#authorization_signature} against calculated {#signature}
+  # @yieldparam key_id [String] public HMAC key
+  # @return [Boolean] true if block yields matching private key
+  # @raise [Ey::Hmac::Error] if authentication fails
+  def authenticated!(&block)
     if authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
       key_id          = authorization_match[1]
       signature_value = authorization_match[2]
 
-      key_secret = block.call(key_id)
-      key_secret && (signature_value == signature(key_secret))
+      if key_secret = block.call(key_id)
+        if signature_value == (calculated_signature = signature(key_secret))
+        else raise(Ey::Hmac::SignatureMismatch, "Calculated siganature #{signature_value} does not match #{calculated_signature} using #{canonicalize.inspect}")
+        end
+      else raise(Ey::Hmac::MissingSecret, "Failed to find secret matching #{key_id.inspect}")
+      end
     else
-      false
+      raise(Ey::Hmac::MissingAuthorization, "Failed to parse authorization_signature #{authorization_signature}")
     end
+    true
   end
+  alias authenticate! authenticated!
 end
