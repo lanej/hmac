@@ -9,11 +9,11 @@ class Ey::Hmac::Signer::Faraday < Ey::Hmac::Signer
 
   def content_md5
     existing = %w[CONTENT-MD5 CONTENT_MD5 Content-MD5 Content_MD5].inject(nil){|r,h| r || request[h]}
-    existing ||= (request['Content-MD5'] = body && Digest::MD5.hexdigest(body))
+    existing || (request['Content-MD5'] = (body && Digest::MD5.hexdigest(body)))
   end
   
   def body
-    request[:body]
+    request.body
   end
 
   def date
