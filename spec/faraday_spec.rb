@@ -33,6 +33,8 @@ describe "faraday" do
 
       yielded.should be_true
     end
+
+    include_examples "authentication"
   end
 
   describe "middleware" do
@@ -49,7 +51,7 @@ describe "faraday" do
 
       request_env = nil
       connection = Faraday.new do |c|
-        c.request :ey_hmac, key_id, key_secret
+        c.request :hmac, key_id, key_secret
         c.adapter(:rack, app)
       end
 

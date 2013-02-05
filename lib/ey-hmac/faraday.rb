@@ -1,7 +1,7 @@
 require 'faraday'
 
 if Faraday.respond_to? :register_middleware
-  Faraday.register_middleware(:request, {:ey_hmac => lambda { Ey::Hmac::Faraday }})
+  Faraday.register_middleware(:request, {:hmac => lambda { Ey::Hmac::Faraday }})
 end
 
 # Request middleware that performs HMAC request signing

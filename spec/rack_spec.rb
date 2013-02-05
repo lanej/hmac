@@ -32,6 +32,8 @@ describe "rack" do
 
       yielded.should be_true
     end
+
+    include_examples "authentication"
   end
 
   describe "middleware" do
