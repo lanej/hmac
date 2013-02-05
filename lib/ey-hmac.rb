@@ -8,6 +8,7 @@ module Ey
   module Hmac
     autoload :Adapter, "ey-hmac/adapter"
     autoload :Faraday, "ey-hmac/faraday"
+    autoload :Rack, "ey-hmac/rack"
 
     def self.default_adapter=(default_adapter)
       @default_adapter = default_adapter

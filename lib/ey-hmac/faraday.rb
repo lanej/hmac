@@ -19,7 +19,7 @@ class Ey::Hmac::Faraday < Faraday::Middleware
   end
 
   def call(env)
-    Ey::Hmac.sign!(env, key_id, key_secret, adapter: Ey::Hmac::Adapter::Faraday)
+    Ey::Hmac.sign!(env, key_id, key_secret, {adapter: Ey::Hmac::Adapter::Faraday}.merge(options))
     @app.call(env)
   end
 end

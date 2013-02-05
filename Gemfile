@@ -13,6 +13,7 @@ end
 group(:rack) do
   gem 'rack'
   gem 'rack-test'
+  gem 'rack-client'
 end
 
 group(:faraday) do
