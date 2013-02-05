@@ -8,8 +8,8 @@ Gem::Specification.new do |gem|
   gem.version       = Ey::Hmac::VERSION
   gem.authors       = ["Josh Lane & Jason Hansen"]
   gem.email         = ["jlane@engineyard.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{Lightweight HMAC signing libraries and middleware for Farday and Rack}
+  gem.summary       = %q{Lightweight HMAC signing libraries and middleware for Farday and Rack}
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($/)
