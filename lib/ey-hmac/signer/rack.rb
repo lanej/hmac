@@ -4,7 +4,7 @@ class Ey::Hmac::Signer::Rack < Ey::Hmac::Signer
     @request = Rack::Request.new(request) if request.is_a?(Hash)
   end
 
-  def request_method
+  def method
     request.request_method.to_s.upcase
   end
 
@@ -12,8 +12,8 @@ class Ey::Hmac::Signer::Rack < Ey::Hmac::Signer
     request.content_type
   end
 
-  def content_md5
-    request.env['HTTP_CONTENT_MD5'] ||= body && Digest::MD5.hexdigest(body)
+  def content_digest
+    request.env['HTTP_CONTENT_DIGEST'] ||= body && Digest::MD5.hexdigest(body)
   end
   
   def body

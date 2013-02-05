@@ -18,7 +18,7 @@ describe "rack" do
     Ey::Hmac.sign!(request, key_id, key_secret, signer: adapter)
 
     request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
-    request.env['HTTP_CONTENT_MD5'].should == Digest::MD5.hexdigest(request.body.tap(&:rewind).read)
+    request.env['HTTP_CONTENT_DIGEST'].should == Digest::MD5.hexdigest(request.body.tap(&:rewind).read)
     Time.parse(request.env['HTTP_DATE']).should_not be_nil
 
     yielded = false

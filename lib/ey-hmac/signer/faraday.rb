@@ -1,5 +1,5 @@
 class Ey::Hmac::Signer::Faraday < Ey::Hmac::Signer
-  def request_method
+  def method
     request.method
   end
 
@@ -7,9 +7,9 @@ class Ey::Hmac::Signer::Faraday < Ey::Hmac::Signer
     %w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type].inject(nil){|r, h| r || request[h]}
   end
 
-  def content_md5
-    existing = %w[CONTENT-MD5 CONTENT_MD5 Content-MD5 Content_MD5].inject(nil){|r,h| r || request[h]}
-    existing || (request['Content-MD5'] = (body && Digest::MD5.hexdigest(body)))
+  def content_digest
+    existing = %w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest].inject(nil){|r,h| r || request[h]}
+    existing || (request['Content-Digest'] = (body && Digest::MD5.hexdigest(body)))
   end
   
   def body

@@ -20,7 +20,7 @@ describe "faraday" do
     Ey::Hmac.sign!(request, key_id, key_secret, signer: adapter)
 
     request.headers['Authorization'].should start_with("EyHmac")
-    request.headers['Content-MD5'].should == Digest::MD5.hexdigest(request.body)
+    request.headers['Content-Digest'].should == Digest::MD5.hexdigest(request.body)
     Time.parse(request.headers['Date']).should_not be_nil
 
     yielded = false

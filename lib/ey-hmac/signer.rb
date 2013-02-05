@@ -1,5 +1,5 @@
 # This class is responsible for forming the canonical string to used to sign requests
-# @abstract override methods {#request_method}, {#path}, {#body}, {#headers} to fulfill contract
+# @abstract override methods {#method}, {#path}, {#body}, {#content_type} and {#content_digest}
 class Ey::Hmac::Signer
   AUTHORIZATION_REGEXP = /\w+ ([^:]+):(.+)$/
 
@@ -19,16 +19,16 @@ class Ey::Hmac::Signer
     @service = options[:service] || 'EyHmac'
   end
 
-  # In order for the server to correctly authorize the request, the client and server MUST AGREE on the method used to form {#String}
+  # In order for the server to correctly authorize the request, the client and server MUST AGREE on this format
   # @return [String] canonical string used to form the {#signature}
   # default canonical string formation is
-  # {#request_method} + "\n" +
+  # {#method} + "\n" +
   # {#content_type}   + "\n" +
-  # {#content_md5}    + "\n" +
+  # {#content_digest} + "\n" +
   # {#date}           + "\n" +
   # {#path}
   def canonicalize
-    [request_method, content_type, content_md5, date, path].join("/n")
+    [method, content_type, content_digest, date, path].join("/n")
   end
 
   # @param [String] key_secret private HMAC key
@@ -46,13 +46,21 @@ class Ey::Hmac::Signer
 
   # @abstract
   # @return [String] upcased verb. i.e. 'GET'
-  def request_method
+  def method
     raise NotImplementedError
   end
 
   # @abstract
   # @return [String] request path. i.e. '/blogs/1'
   def path
+    raise NotImplementedError
+  end
+
+  # @abstract
+  # Digest of body. Default is MD5.
+  # @todo support explicit digest methods
+  # @return [String] digest of body
+  def content_digest
     raise NotImplementedError
   end
 
@@ -93,7 +101,7 @@ class Ey::Hmac::Signer
   #     @consumer = Consumer.where(auth_id: key_id).first
   #     @consumer && @consumer.auth_key
   #   end
-  # @yieldparams key_id [String] public HMAC key
+  # @yieldparam key_id [String] public HMAC key
   # @return [Boolean] true if block yields matching private key and signature matches, else false
   def authenticated?(&block)
     if authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
