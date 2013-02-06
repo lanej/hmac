@@ -8,10 +8,14 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def content_digest
-    existing = %w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest].inject(nil){|r,h| r || request[:request_headers][h]}
-    existing || (request[:request_headers]['Content-Digest'] = (body && Digest::MD5.hexdigest(body)))
+    if existing = %w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest].inject(nil){|r,h| r || request[:request_headers][h]}
+      existing
+    elsif digestable = body && Digest::MD5.hexdigest(body)
+      request[:request_headers]['Content-Digest'] =  digestable
+    else nil
+    end
   end
-  
+
   def body
     if request[:body] && request[:body].to_s != ""
       request[:body]

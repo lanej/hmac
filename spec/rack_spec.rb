@@ -8,14 +8,12 @@ describe "rack" do
 
   describe "adapter" do
     let(:adapter)     { Ey::Hmac::Adapter::Rack }
-    let(:request)     {
-      Rack::Request.new({
-        "rack.input" => StringIO.new("{1: 2}"),
-        "HTTP_CONTENT_TYPE" => "application/json",
-      })
-    }
 
     it "should sign and read request" do
+      request = Rack::Request.new(
+        "rack.input"        => StringIO.new("{1: 2}"),
+        "HTTP_CONTENT_TYPE" => "application/json",
+      )
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
       request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
@@ -33,7 +31,61 @@ describe "rack" do
       yielded.should be_true
     end
 
-    include_examples "authentication"
+    it "should not set Content-Digest if body is nil" do
+      request = Rack::Request.new(
+        "HTTP_CONTENT_TYPE" => "application/json",
+      )
+
+      Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
+
+      request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
+      request.env.should_not have_key('HTTP_CONTENT_DIGEST')
+      Time.parse(request.env['HTTP_DATE']).should_not be_nil
+
+      yielded = false
+
+      Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+        key_id.should == key_id
+        yielded = true
+        key_secret
+      end.should be_true
+
+      yielded.should be_true
+    end
+
+    it "should not set Content-Digest if body is empty" do
+      request = Rack::Request.new(
+        "rack.input"        => StringIO.new(""),
+        "HTTP_CONTENT_TYPE" => "application/json",
+      )
+
+      Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
+
+      request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
+      request.env.should_not have_key('HTTP_CONTENT_DIGEST')
+      Time.parse(request.env['HTTP_DATE']).should_not be_nil
+
+      yielded = false
+
+      Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+        key_id.should == key_id
+        yielded = true
+        key_secret
+      end.should be_true
+
+      yielded.should be_true
+    end
+
+    context "with a request" do
+      let(:request) {
+        Rack::Request.new(
+          "rack.input"        => StringIO.new("{1: 2}"),
+          "HTTP_CONTENT_TYPE" => "application/json",
+        )
+      }
+
+      include_examples "authentication"
+    end
   end
 
   describe "middleware" do

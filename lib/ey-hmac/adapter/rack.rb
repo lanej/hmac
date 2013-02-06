@@ -15,7 +15,11 @@ class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
   end
 
   def content_digest
-    request.env['HTTP_CONTENT_DIGEST'] ||= body && Digest::MD5.hexdigest(body)
+    if existing = request.env['HTTP_CONTENT_DIGEST']
+      existing
+    elsif digest = body && Digest::MD5.hexdigest(body)
+      request.env['HTTP_CONTENT_DIGEST'] = digest
+    end
   end
   
   def body
