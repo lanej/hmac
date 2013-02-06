@@ -117,15 +117,21 @@ describe "faraday" do
       connection.get("/resources").status.should == 200
     end
 
-    it "should sign emtpty request" do
+    it "should sign empty request" do
       require 'ey-hmac/faraday'
       Bundler.require(:rack)
 
-      app = lambda do |env|
-        authenticated = Ey::Hmac.authenticated?(env, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
-          (auth_id == key_id) && key_secret
+      _key_id, _key_secret = key_id, key_secret
+      app = Rack::Builder.new do
+        use Rack::Config do |env|
+          env["CONTENT_TYPE"] ||= "text/html"
         end
-        [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+        run(lambda {|env|
+          authenticated = Ey::Hmac.authenticate!(env, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+            (auth_id == _key_id) && _key_secret
+          end
+          [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+        })
       end
 
       request_env = nil
@@ -137,6 +143,8 @@ describe "faraday" do
       connection.get do |req|
         req.path  = "/resource"
         req.body = nil
+        req.params = {"a" => "1"}
+        req.headers = {"Content-Type" => "application/x-www-form-urlencoded"}
       end.status.should == 200
     end
   end
