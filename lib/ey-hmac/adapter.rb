@@ -6,7 +6,7 @@ class Ey::Hmac::Adapter
   autoload :Rack, "ey-hmac/adapter/rack"
   autoload :Faraday, "ey-hmac/adapter/faraday"
 
-  attr_reader :request, :options, :authorization_header, :service
+  attr_reader :request, :options, :authorization_header, :service, :digest_hash, :digest_header
 
   # @param [Object] request signer-specific request implementation
   # @option options [Integer] :version signature version
@@ -16,7 +16,9 @@ class Ey::Hmac::Adapter
     @request, @options = request, options
 
     @authorization_header = options[:authorization_header] || 'Authorization'
-    @service = options[:service] || 'EyHmac'
+    @service              = options[:service]              || 'EyHmac'
+    @digest_header        = options[:digest_header]        || 'Digest-Hash'
+    @digest_hash          = options[:digest_hash]          || 'sha1'
   end
 
   # In order for the server to correctly authorize the request, the client and server MUST AGREE on this format
@@ -29,9 +31,8 @@ class Ey::Hmac::Adapter
 
   # @param [String] key_secret private HMAC key
   # @return [String] HMAC signature of {#request}
-  # @todo handle multiple hash functions
   def signature(key_secret)
-    Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), key_secret, canonicalize)).strip
+    Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new(digest_hash), key_secret, canonicalize)).strip
   end
 
   # @param [String] key_id public HMAC key

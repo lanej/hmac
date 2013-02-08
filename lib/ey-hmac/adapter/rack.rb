@@ -41,6 +41,7 @@ class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
       request.env['HTTP_X_SIGNATURE_VERSION'] = options[:version]
     end
 
+    request.env["HTTP_#{digest_header.to_s.upcase}"] = digest_header.to_s.upcase
     request.env["HTTP_#{authorization_header.to_s.upcase}"] = authorization(key_id, key_secret)
   end
 
