@@ -6,50 +6,63 @@ class Ey::Hmac::Adapter
   autoload :Rack, "ey-hmac/adapter/rack"
   autoload :Faraday, "ey-hmac/adapter/faraday"
 
-  attr_reader :request, :options, :authorization_header, :service, :digest_hash, :digest_header
+  attr_reader :request, :options, :authorization_header, :service, :signature_digest_header
 
   # @param [Object] request signer-specific request implementation
   # @option options [Integer] :version signature version
   # @option options [String] :authorization_header ('Authorization') Authorization header key.
   # @option options [String] :server ('EyHmac') service name prefixed to {#authorization}. set to {#service}
+  # @option options [String] :signature_digest_header ('Signature-Hash') hashing function to use
+  # @option options [String] :signature_digest_method ('SHA256') hashing function performed on the signature
   def initialize(request, options={})
     @request, @options = request, options
 
-    @authorization_header = options[:authorization_header] || 'Authorization'
-    @service              = options[:service]              || 'EyHmac'
-    @digest_header        = options[:digest_header]        || 'Digest-Hash'
-    @digest_hash          = options[:digest_hash]          || 'sha1'
+    @authorization_header    = options[:authorization_header]     || 'Authorization'
+    @service                 = options[:service]                  || 'EyHmac'
+    @signature_digest_header = options[:signature_digest_header]  || 'Signature-Digest'
+    @signature_digest_method = (options[:signature_digest_method] || 'SHA256').to_s.upcase
   end
 
   # In order for the server to correctly authorize the request, the client and server MUST AGREE on this format
   #
   # default canonical string formation is '{#method}\\n{#content_type}\\n{#content_digest}\\n{#date}\\n{#path}'
   # @return [String] canonical string used to form the {#signature}
+  # @api public
   def canonicalize
     [method, content_type, content_digest, date, path].join("\n")
   end
 
   # @param [String] key_secret private HMAC key
   # @return [String] HMAC signature of {#request}
+  # @api public
   def signature(key_secret)
-    Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new(digest_hash), key_secret, canonicalize)).strip
+    Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new(signature_digest_method), key_secret, canonicalize)).strip
+  end
+
+  # @abstract
+  # @return [String] signature digest method from {#signature_digest_header} or from {@signature_digest_method}
+  def signature_digest_method
+    raise NotImplementedError
   end
 
   # @param [String] key_id public HMAC key
   # @param [String] key_secret private HMAC key
   # @return [String] HMAC header value of {#request}
+  # @api public
   def authorization(key_id, key_secret)
     "#{service} #{key_id}:#{signature(key_secret)}"
   end
 
   # @abstract
   # @return [String] upcased request verb. i.e. 'GET'
+  # @api public
   def method
     raise NotImplementedError
   end
 
   # @abstract
   # @return [String] request path. i.e. '/blogs/1'
+  # @api public
   def path
     raise NotImplementedError
   end
@@ -58,6 +71,7 @@ class Ey::Hmac::Adapter
   # Digest of body. Default is MD5.
   # @todo support explicit digest methods
   # @return [String] digest of body
+  # @api public
   def content_digest
     raise NotImplementedError
   end
@@ -65,12 +79,14 @@ class Ey::Hmac::Adapter
   # @abstract
   # @return [String] request body.
   # @return [NilClass] if there is no body or the body is empty
+  # @api public
   def body
     raise NotImplementedError
   end
 
   # @abstract
   # @return [String] value of the Content-Type header in {#request}
+  # @api public
   def content_type
     raise NotImplementedError
   end
@@ -78,18 +94,21 @@ class Ey::Hmac::Adapter
   # @abstract
   # @return [String] value of the Date header in {#request}.
   # @see {Time#http_date}
+  # @api public
   def date
     raise NotImplementedError
   end
 
   # @abstract used when verifying a signed request
   # @return [String] value of the {#authorization_header}
+  # @api public
   def authorization_signature
     raise NotImplementedError
   end
 
   # @abstract
-  # Add {#signature} header to request. Typically this is 'Authorization' or 'WWW-Authorization'
+  # Add {#signature} in {#authorization_header} and {#signature_digest_method} to {#signature_digest_header}
+  # @api public
   def sign!(key_id, key_secret)
     raise NotImplementedError
   end
@@ -97,7 +116,8 @@ class Ey::Hmac::Adapter
   # Check {#authorization_signature} against calculated {#signature}
   # @yieldparam key_id [String] public HMAC key
   # @return [Boolean] true if block yields matching private key and signature matches, else false
-  # @see {#authenticated!}
+  # @see #authenticated!
+  # @api public
   def authenticated?(&block)
     authenticated!(&block)
   rescue Ey::Hmac::Error
@@ -108,6 +128,7 @@ class Ey::Hmac::Adapter
   # @yieldparam key_id [String] public HMAC key
   # @return [Boolean] true if block yields matching private key
   # @raise [Ey::Hmac::Error] if authentication fails
+  # @api public
   def authenticated!(&block)
     if authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
       key_id          = authorization_match[1]

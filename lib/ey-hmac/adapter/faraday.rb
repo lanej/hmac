@@ -34,7 +34,12 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
       request[:request_headers]['X-Signature-Version'] = options[:version]
     end
 
-    request[:request_headers][authorization_header] = authorization(key_id, key_secret)
+    request[:request_headers][authorization_header]    = authorization(key_id, key_secret)
+    request[:request_headers][signature_digest_header] = signature_digest_method.to_s.upcase
+  end
+
+  def signature_digest_method
+    request[:request_headers][signature_digest_header] || @signature_digest_method
   end
 
   def authorization_signature

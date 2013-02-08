@@ -20,17 +20,25 @@ describe "rack" do
 
       request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
       request.env['HTTP_CONTENT_DIGEST'].should == Digest::MD5.hexdigest(request.body.tap(&:rewind).read)
+      request.env['HTTP_SIGNATURE_DIGEST'].should == "SHA256"
       Time.parse(request.env['HTTP_DATE']).should_not be_nil
 
       yielded = false
 
-      Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
-        key_id.should == key_id
-        yielded = true
-        key_secret
-      end.should be_true
+      Ey::Hmac.authenticated?(request, adapter: adapter){|public_key| (public_key == key_id) && key_secret }.should be_true
+    end
 
-      yielded.should be_true
+    it "should sign and read request with a specific signature_digest_method" do
+      Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter, signature_digest_method: :sha1)
+
+      request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
+      request.env['HTTP_CONTENT_DIGEST'].should == Digest::MD5.hexdigest(request.body.tap(&:rewind).read)
+      request.env['HTTP_SIGNATURE_DIGEST'].should == "SHA1"
+      Time.parse(request.env['HTTP_DATE']).should_not be_nil
+
+      yielded = false
+
+      Ey::Hmac.authenticated?(request, adapter: adapter){|public_key| (public_key == key_id) && key_secret }.should be_true
     end
 
     include_examples "authentication"

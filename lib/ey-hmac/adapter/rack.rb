@@ -36,13 +36,17 @@ class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
     request.path
   end
 
+  def signature_digest_method
+    request.env["HTTP_#{signature_digest_header.gsub("-","_").to_s.upcase}"] || @signature_digest_method
+  end
+
   def sign!(key_id, key_secret)
     if options[:version]
       request.env['HTTP_X_SIGNATURE_VERSION'] = options[:version]
     end
 
-    request.env["HTTP_#{digest_header.to_s.upcase}"] = digest_header.to_s.upcase
-    request.env["HTTP_#{authorization_header.to_s.upcase}"] = authorization(key_id, key_secret)
+    request.env["HTTP_#{authorization_header.to_s.upcase}"]                  = authorization(key_id, key_secret)
+    request.env["HTTP_#{signature_digest_header.gsub("-","_").to_s.upcase}"] = signature_digest_method.to_s.upcase
   end
 
   def authorization_signature

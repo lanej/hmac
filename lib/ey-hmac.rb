@@ -35,10 +35,7 @@ module Ey
     #
     # @param request [Hash] request environment
     # @option options [Ey::Hmac::Adapter] :adapter (#{default_adapter}) adapter to sign request with
-    # @option options [Integer] :version (nil) signature version
-    # @option options [String] :authorization_header ('Authorization') Authorization header key.
-    # @option options [String] :server ('EyHmac') service name prefixed to {#authorization}
-    # @see {Ey::Hmac::Adapter#sign!}
+    # @see Ey::Hmac::Adapter#sign!
     def self.sign!(request, key_id, key_secret, options={})
       adapter = options[:adapter] || Ey::Hmac.default_adapter
 
@@ -54,7 +51,7 @@ module Ey
     #   end
     # @param request [Hash] request environment
     # @option options [Ey::Hmac::Adapter] :adapter ({#default_adapter}) adapter to verify request with
-    # @see {Ey::Hmac::Adapter#authenticated?}
+    # @see Ey::Hmac::Adapter#authenticated?
     def self.authenticated?(request, options={}, &block)
       adapter = options[:adapter] || Ey::Hmac.default_adapter
 
@@ -70,7 +67,7 @@ module Ey
     #   end
     # @param request [Hash] request environment
     # @option options [Ey::Hmac::Adapter] :adapter ({#default_adapter}) adapter to verify request with
-    # @see {Ey::Hmac::Adapter#authenticate!}
+    # @see Ey::Hmac::Adapter#authenticate!
     def self.authenticate!(request, options={}, &block)
       adapter = options[:adapter] || Ey::Hmac.default_adapter
 
