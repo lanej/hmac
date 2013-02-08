@@ -112,7 +112,8 @@ class Ey::Hmac::Adapter
       signature_value = authorization_match[2]
 
       if key_secret = block.call(key_id)
-        if signature_value == (calculated_signature = signature(key_secret))
+        calculated_signature = signature(key_secret)
+        if secure_compare(signature_value, calculated_signature)
         else raise(Ey::Hmac::SignatureMismatch, "Calculated siganature #{signature_value} does not match #{calculated_signature} using #{canonicalize.inspect}")
         end
       else raise(Ey::Hmac::MissingSecret, "Failed to find secret matching #{key_id.inspect}")
@@ -123,4 +124,16 @@ class Ey::Hmac::Adapter
     true
   end
   alias authenticate! authenticated!
+
+  # Constant time string comparison.
+  # pulled from https://github.com/rack/rack/blob/master/lib/rack/utils.rb#L399
+  def secure_compare(a, b)
+    return false unless a.bytesize == b.bytesize
+
+    l = a.unpack("C*")
+
+    r, i = 0, -1
+    b.each_byte { |v| r |= v ^ l[i+=1] }
+    r == 0
+  end
 end
