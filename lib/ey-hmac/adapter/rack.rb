@@ -3,7 +3,10 @@ require 'rack'
 class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
   def initialize(request, options)
     super
-    @request = ::Rack::Request.new(request) if request.is_a?(Hash)
+    @request = if request.is_a?(Hash)
+                 ::Rack::Request.new(request)
+               else request
+               end
   end
 
   def method
