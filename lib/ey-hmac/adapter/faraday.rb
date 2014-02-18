@@ -4,11 +4,11 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def content_type
-    %w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type].inject(nil){|r, h| r || request[:request_headers][h]}
+    %w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type].inject(nil) { |r,h| r || request[:request_headers][h] }
   end
 
   def content_digest
-    if existing = %w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest].inject(nil){|r,h| r || request[:request_headers][h]}
+    if existing = %w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest].inject(nil) { |r,h| r || request[:request_headers][h] }
       existing
     elsif digestable = body && Digest::MD5.hexdigest(body)
       request[:request_headers]['Content-Digest'] = digestable
@@ -24,7 +24,7 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def date
-    existing = %w[DATE Date].inject(nil){|r,h| r || request[h]}
+    existing = %w[DATE Date].inject(nil) { |r,h| r || request[h] }
     existing || (request[:request_headers]['Date'] = Time.now.httpdate)
   end
 

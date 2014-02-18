@@ -3,8 +3,8 @@ require 'spec_helper'
 describe "rack" do
   before(:all) { Bundler.require(:rack) }
 
-  let!(:key_id)     { (0...8).map{ 65.+(rand(26)).chr}.join }
-  let!(:key_secret) { (0...16).map{ 65.+(rand(26)).chr}.join }
+  let!(:key_id)     { SecureRandom.hex(8) }
+  let!(:key_secret) { SecureRandom.hex(16) }
 
   describe "adapter" do
     let(:adapter)     { Ey::Hmac::Adapter::Rack }
@@ -89,7 +89,22 @@ describe "rack" do
   end
 
   describe "middleware" do
-    it "should sign and read request" do
+    it "should accept a SHA1 signature" do
+      app = lambda do |env|
+        authenticated = Ey::Hmac.authenticated?(env, digest: :sha1, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+          (auth_id == key_id) && key_secret
+        end
+        [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+      end
+
+      _key_id, _key_secret = key_id, key_secret
+      client = Rack::Client.new do
+        use Ey::Hmac::Rack, _key_id, _key_secret, digest: :sha1
+        run app
+      end
+    end
+
+    it "should accept a SHA256 signature" do # default
       app = lambda do |env|
         authenticated = Ey::Hmac.authenticated?(env, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
           (auth_id == key_id) && key_secret
@@ -104,6 +119,26 @@ describe "rack" do
       end
 
       client.get("/resource").status.should == 200
+    end
+
+    it "should accept multiple digest signatures" do # default
+      require 'ey-hmac/faraday'
+      Bundler.require(:rack)
+
+      app = lambda do |env|
+        authenticated = Ey::Hmac.authenticated?(env, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+          (auth_id == key_id) && key_secret
+        end
+        [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+      end
+
+      request_env = nil
+      connection = Faraday.new do |c|
+        c.request :hmac, key_id, key_secret, digest: [:sha1, :sha256]
+        c.adapter(:rack, app)
+      end
+
+      connection.get("/resources").status.should == 200
     end
   end
 end

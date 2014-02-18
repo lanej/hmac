@@ -6,7 +6,7 @@ class Ey::Hmac::Adapter
   autoload :Rack, "ey-hmac/adapter/rack"
   autoload :Faraday, "ey-hmac/adapter/faraday"
 
-  attr_reader :request, :options, :authorization_header, :service
+  attr_reader :request, :options, :authorization_header, :service, :sign_with, :accept_digests
 
   # @param [Object] request signer-specific request implementation
   # @option options [Integer] :version signature version
@@ -16,7 +16,8 @@ class Ey::Hmac::Adapter
     @request, @options = request, options
 
     @authorization_header = options[:authorization_header] || 'Authorization'
-    @service = options[:service] || 'EyHmac'
+    @service              = options[:service] || 'EyHmac'
+    @sign_with            = options[:sign_with] || :sha256
   end
 
   # In order for the server to correctly authorize the request, the client and server MUST AGREE on this format
@@ -28,17 +29,17 @@ class Ey::Hmac::Adapter
   end
 
   # @param [String] key_secret private HMAC key
+  # @param [String] signature digest hash function. Defaults to #sign_with
   # @return [String] HMAC signature of {#request}
-  # @todo handle multiple hash functions
-  def signature(key_secret)
-    Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new('sha1'), key_secret, canonicalize)).strip
+  def signature(key_secret, digest = self.sign_with)
+    Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::Digest.new(digest.to_s), key_secret, canonicalize)).strip
   end
 
   # @param [String] key_id public HMAC key
   # @param [String] key_secret private HMAC key
   # @return [String] HMAC header value of {#request}
   def authorization(key_id, key_secret)
-    "#{service} #{key_id}:#{signature(key_secret)}"
+    "#{service} #{key_id}:#{signature(key_secret, sign_with)}"
   end
 
   # @abstract
@@ -55,7 +56,6 @@ class Ey::Hmac::Adapter
 
   # @abstract
   # Digest of body. Default is MD5.
-  # @todo support explicit digest methods
   # @return [String] digest of body
   def content_digest
     raise NotImplementedError
@@ -99,27 +99,30 @@ class Ey::Hmac::Adapter
   # @yieldparam key_id [String] public HMAC key
   # @return [Boolean] true if block yields matching private key and signature matches, else false
   # @see #authenticated!
-  def authenticated?(&block)
+  def authenticated?(options={}, &block)
     authenticated!(&block)
   rescue Ey::Hmac::Error
     false
   end
 
   # @see Ey::Hmac#authenticate!
-  def authenticated!(&block)
-    if authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
-      key_id          = authorization_match[1]
-      signature_value = authorization_match[2]
-
-      if key_secret = block.call(key_id)
-        calculated_signature = signature(key_secret)
-        if secure_compare(signature_value, calculated_signature)
-        else raise(Ey::Hmac::SignatureMismatch, "Calculated siganature #{signature_value} does not match #{calculated_signature} using #{canonicalize.inspect}")
-        end
-      else raise(Ey::Hmac::MissingSecret, "Failed to find secret matching #{key_id.inspect}")
-      end
-    else
+  def authenticated!(options={}, &block)
+    unless authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
       raise(Ey::Hmac::MissingAuthorization, "Failed to parse authorization_signature #{authorization_signature}")
+    end
+
+    key_id          = authorization_match[1]
+    signature_value = authorization_match[2]
+
+    unless key_secret = block.call(key_id)
+      raise(Ey::Hmac::MissingSecret, "Failed to find secret matching #{key_id.inspect}")
+    end
+
+    acceptable_digests    = options[:digests] || self.accept_digests || [self.sign_with]
+    calculated_signatures = acceptable_digests.map { |ad| signature(key_secret, ad) }
+
+    unless calculated_signatures.any? { |cs| secure_compare(signature_value, cs) }
+      raise(Ey::Hmac::SignatureMismatch, "Calculated siganature #{signature_value} does not match #{calculated_signatures.inspect} using #{canonicalize.inspect}")
     end
     true
   end

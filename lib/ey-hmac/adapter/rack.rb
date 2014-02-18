@@ -24,7 +24,7 @@ class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
       request.env['HTTP_CONTENT_DIGEST'] = digest
     end
   end
-  
+
   def body
     if request.env["rack.input"]
       request.env["rack.input"].rewind

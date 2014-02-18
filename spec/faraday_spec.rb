@@ -97,7 +97,27 @@ describe "faraday" do
   end
 
   describe "middleware" do
-    it "should sign request" do
+    it "should accept a SHA1 signature" do
+      require 'ey-hmac/faraday'
+      Bundler.require(:rack)
+
+      app = lambda do |env|
+        authenticated = Ey::Hmac.authenticated?(env, digest: :sha1, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+          (auth_id == key_id) && key_secret
+        end
+        [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+      end
+
+      request_env = nil
+      connection = Faraday.new do |c|
+        c.request :hmac, key_id, key_secret, digest: :sha1
+        c.adapter(:rack, app)
+      end
+
+      connection.get("/resources").status.should == 200
+    end
+
+    it "should accept a SHA256 signature" do # default
       require 'ey-hmac/faraday'
       Bundler.require(:rack)
 
@@ -111,6 +131,26 @@ describe "faraday" do
       request_env = nil
       connection = Faraday.new do |c|
         c.request :hmac, key_id, key_secret
+        c.adapter(:rack, app)
+      end
+
+      connection.get("/resources").status.should == 200
+    end
+
+    it "should accept multiple digest signatures" do # default
+      require 'ey-hmac/faraday'
+      Bundler.require(:rack)
+
+      app = lambda do |env|
+        authenticated = Ey::Hmac.authenticated?(env, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+          (auth_id == key_id) && key_secret
+        end
+        [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+      end
+
+      request_env = nil
+      connection = Faraday.new do |c|
+        c.request :hmac, key_id, key_secret, digest: [:sha1, :sha256]
         c.adapter(:rack, app)
       end
 
