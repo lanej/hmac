@@ -102,7 +102,7 @@ describe "faraday" do
       Bundler.require(:rack)
 
       app = lambda do |env|
-        authenticated = Ey::Hmac.authenticated?(env, digest: :sha1, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+        authenticated = Ey::Hmac.authenticated?(env, accept_digests: :sha1, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
           (auth_id == key_id) && key_secret
         end
         [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
@@ -110,7 +110,7 @@ describe "faraday" do
 
       request_env = nil
       connection = Faraday.new do |c|
-        c.request :hmac, key_id, key_secret, digest: :sha1
+        c.request :hmac, key_id, key_secret, sign_with: :sha1
         c.adapter(:rack, app)
       end
 
@@ -142,7 +142,7 @@ describe "faraday" do
       Bundler.require(:rack)
 
       app = lambda do |env|
-        authenticated = Ey::Hmac.authenticated?(env, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+        authenticated = Ey::Hmac.authenticated?(env, accept_digests: [:sha1, :sha256], adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
           (auth_id == key_id) && key_secret
         end
         [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
@@ -150,7 +150,7 @@ describe "faraday" do
 
       request_env = nil
       connection = Faraday.new do |c|
-        c.request :hmac, key_id, key_secret, digest: [:sha1, :sha256]
+        c.request :hmac, key_id, key_secret
         c.adapter(:rack, app)
       end
 

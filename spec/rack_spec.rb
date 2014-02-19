@@ -91,7 +91,7 @@ describe "rack" do
   describe "middleware" do
     it "should accept a SHA1 signature" do
       app = lambda do |env|
-        authenticated = Ey::Hmac.authenticated?(env, digest: :sha1, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+        authenticated = Ey::Hmac.authenticated?(env, accept_digests: [:sha1, :sha256], adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
           (auth_id == key_id) && key_secret
         end
         [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
@@ -99,9 +99,11 @@ describe "rack" do
 
       _key_id, _key_secret = key_id, key_secret
       client = Rack::Client.new do
-        use Ey::Hmac::Rack, _key_id, _key_secret, digest: :sha1
+        use Ey::Hmac::Rack, _key_id, _key_secret, sign_with: :sha1
         run app
       end
+
+      client.get("/resource").status.should == 200
     end
 
     it "should accept a SHA256 signature" do # default

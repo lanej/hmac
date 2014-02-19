@@ -18,6 +18,7 @@ class Ey::Hmac::Adapter
     @authorization_header = options[:authorization_header] || 'Authorization'
     @service              = options[:service] || 'EyHmac'
     @sign_with            = options[:sign_with] || :sha256
+    @accept_digests       = Array(options[:accept_digests] || :sha256)
   end
 
   # In order for the server to correctly authorize the request, the client and server MUST AGREE on this format
@@ -106,7 +107,7 @@ class Ey::Hmac::Adapter
   end
 
   # @see Ey::Hmac#authenticate!
-  def authenticated!(options={}, &block)
+  def authenticated!(&block)
     unless authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
       raise(Ey::Hmac::MissingAuthorization, "Failed to parse authorization_signature #{authorization_signature}")
     end
@@ -118,8 +119,7 @@ class Ey::Hmac::Adapter
       raise(Ey::Hmac::MissingSecret, "Failed to find secret matching #{key_id.inspect}")
     end
 
-    acceptable_digests    = options[:digests] || self.accept_digests || [self.sign_with]
-    calculated_signatures = acceptable_digests.map { |ad| signature(key_secret, ad) }
+    calculated_signatures = self.accept_digests.map { |ad| signature(key_secret, ad) }
 
     unless calculated_signatures.any? { |cs| secure_compare(signature_value, cs) }
       raise(Ey::Hmac::SignatureMismatch, "Calculated siganature #{signature_value} does not match #{calculated_signatures.inspect} using #{canonicalize.inspect}")
