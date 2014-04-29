@@ -12,6 +12,8 @@ class Ey::Hmac::Adapter
   # @option options [Integer] :version signature version
   # @option options [String] :authorization_header ('Authorization') Authorization header key.
   # @option options [String] :server ('EyHmac') service name prefixed to {#authorization}. set to {#service}
+  # @option options [Symbol] :sign_with (:sha_256) outgoing signature digest algorithm. See {OpenSSL::Digest#new}
+  # @option options [Array] :accepted_digests ([:sha_256]) accepted incoming signature digest algorithm. See {OpenSSL::Digest#new}
   def initialize(request, options={})
     @request, @options = request, options
 
