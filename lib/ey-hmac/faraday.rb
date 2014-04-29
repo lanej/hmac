@@ -6,7 +6,9 @@ if Faraday.respond_to? :register_middleware
 end
 
 # Request middleware that performs HMAC request signing
-class Ey::Hmac::Faraday < Faraday::Middleware
+require 'faraday_middleware/response_middleware'
+
+class Ey::Hmac::Faraday < FaradayMiddleware::ResponseMiddleware
   dependency do
     require 'ey-hmac' unless defined?(Ey::Hmac)
   end
@@ -24,3 +26,5 @@ class Ey::Hmac::Faraday < Faraday::Middleware
     @app.call(env)
   end
 end
+
+Faraday::Request.register_middleware(:hmac => lambda { Ey::Hmac::Faraday })
