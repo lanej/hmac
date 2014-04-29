@@ -122,7 +122,7 @@ class Ey::Hmac::Adapter
     calculated_signatures = self.accept_digests.map { |ad| signature(key_secret, ad) }
 
     unless calculated_signatures.any? { |cs| secure_compare(signature_value, cs) }
-      raise(Ey::Hmac::SignatureMismatch, "Calculated siganature #{signature_value} does not match #{calculated_signatures.inspect} using #{canonicalize.inspect}")
+      raise(Ey::Hmac::SignatureMismatch, "Calculated signature #{signature_value} does not match #{calculated_signatures.inspect} using #{canonicalize.inspect}")
     end
     true
   end
