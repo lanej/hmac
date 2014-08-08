@@ -4,9 +4,8 @@ source 'https://rubygems.org'
 gemspec
 
 group(:test) do
-  gem 'rb-fsevent'
   gem 'guard-bundler'
-  gem 'guard-rspec'
+  gem 'guard-rspec', '~> 4.2'
   gem 'pry-nav'
   gem 'rspec', '~> 2.99'
 end
