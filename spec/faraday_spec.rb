@@ -18,19 +18,19 @@ describe "faraday" do
 
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      request[:request_headers]['Authorization'].should start_with("EyHmac")
-      request[:request_headers]['Content-Digest'].should == Digest::MD5.hexdigest(request[:body])
-      Time.parse(request[:request_headers]['Date']).should_not be_nil
+      expect(request[:request_headers]['Authorization']).to start_with("EyHmac")
+      expect(request[:request_headers]['Content-Digest']).to eq(Digest::MD5.hexdigest(request[:body]))
+      expect(Time.parse(request[:request_headers]['Date'])).not_to be_nil
 
       yielded = false
 
-      Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
-        key_id.should == key_id
+      expect(Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+        expect(key_id).to eq(key_id)
         yielded = true
         key_secret
-      end.should be_true
+      end).to be_truthy
 
-      yielded.should be_true
+      expect(yielded).to be_truthy
     end
 
     it "should not set Content-Digest if body is nil" do
@@ -43,19 +43,19 @@ describe "faraday" do
 
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      request[:request_headers]['Authorization'].should start_with("EyHmac")
-      request[:request_headers].should_not have_key('Content-Digest')
-      Time.parse(request[:request_headers]['Date']).should_not be_nil
+      expect(request[:request_headers]['Authorization']).to start_with("EyHmac")
+      expect(request[:request_headers]).not_to have_key('Content-Digest')
+      expect(Time.parse(request[:request_headers]['Date'])).not_to be_nil
 
       yielded = false
 
-      Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
-        key_id.should == key_id
+      expect(Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+        expect(key_id).to eq(key_id)
         yielded = true
         key_secret
-      end.should be_true
+      end).to be_truthy
 
-      yielded.should be_true
+      expect(yielded).to be_truthy
     end
 
     it "should not set Content-Digest if body is empty" do
@@ -68,19 +68,19 @@ describe "faraday" do
 
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      request[:request_headers]['Authorization'].should start_with("EyHmac")
-      request[:request_headers].should_not have_key('Content-Digest')
-      Time.parse(request[:request_headers]['Date']).should_not be_nil
+      expect(request[:request_headers]['Authorization']).to start_with("EyHmac")
+      expect(request[:request_headers]).not_to have_key('Content-Digest')
+      expect(Time.parse(request[:request_headers]['Date'])).not_to be_nil
 
       yielded = false
 
-      Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
-        key_id.should == key_id
+      expect(Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+        expect(key_id).to eq(key_id)
         yielded = true
         key_secret
-      end.should be_true
+      end).to be_truthy
 
-      yielded.should be_true
+      expect(yielded).to be_truthy
     end
 
     context "with a request" do
@@ -114,7 +114,7 @@ describe "faraday" do
         c.adapter(:rack, app)
       end
 
-      connection.get("/resources").status.should == 200
+      expect(connection.get("/resources").status).to eq(200)
     end
 
     it "should accept a SHA256 signature" do # default
@@ -134,7 +134,7 @@ describe "faraday" do
         c.adapter(:rack, app)
       end
 
-      connection.get("/resources").status.should == 200
+      expect(connection.get("/resources").status).to eq(200)
     end
 
     it "should accept multiple digest signatures" do # default
@@ -154,7 +154,7 @@ describe "faraday" do
         c.adapter(:rack, app)
       end
 
-      connection.get("/resources").status.should == 200
+      expect(connection.get("/resources").status).to eq(200)
     end
 
     it "should sign empty request" do
@@ -180,12 +180,12 @@ describe "faraday" do
         c.adapter(:rack, app)
       end
 
-      connection.get do |req|
+      expect(connection.get do |req|
         req.path  = "/resource"
         req.body = nil
         req.params = {"a" => "1"}
         req.headers = {"Content-Type" => "application/x-www-form-urlencoded"}
-      end.status.should == 200
+      end.status).to eq(200)
     end
   end
 end

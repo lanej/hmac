@@ -8,6 +8,7 @@ group(:test) do
   gem 'guard-bundler'
   gem 'guard-rspec'
   gem 'pry-nav'
+  gem 'rspec', '~> 2.99'
 end
 
 group(:rack) do

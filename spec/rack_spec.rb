@@ -16,19 +16,19 @@ describe "rack" do
       )
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
-      request.env['HTTP_CONTENT_DIGEST'].should == Digest::MD5.hexdigest(request.body.tap(&:rewind).read)
-      Time.parse(request.env['HTTP_DATE']).should_not be_nil
+      expect(request.env['HTTP_AUTHORIZATION']).to start_with("EyHmac")
+      expect(request.env['HTTP_CONTENT_DIGEST']).to eq(Digest::MD5.hexdigest(request.body.tap(&:rewind).read))
+      expect(Time.parse(request.env['HTTP_DATE'])).not_to be_nil
 
       yielded = false
 
-      Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
-        key_id.should == key_id
+      expect(Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+        expect(key_id).to eq(key_id)
         yielded = true
         key_secret
-      end.should be_true
+      end).to be_truthy
 
-      yielded.should be_true
+      expect(yielded).to be_truthy
     end
 
     it "should not set Content-Digest if body is nil" do
@@ -38,19 +38,19 @@ describe "rack" do
 
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
-      request.env.should_not have_key('HTTP_CONTENT_DIGEST')
-      Time.parse(request.env['HTTP_DATE']).should_not be_nil
+      expect(request.env['HTTP_AUTHORIZATION']).to start_with("EyHmac")
+      expect(request.env).not_to have_key('HTTP_CONTENT_DIGEST')
+      expect(Time.parse(request.env['HTTP_DATE'])).not_to be_nil
 
       yielded = false
 
-      Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
-        key_id.should == key_id
+      expect(Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+        expect(key_id).to eq(key_id)
         yielded = true
         key_secret
-      end.should be_true
+      end).to be_truthy
 
-      yielded.should be_true
+      expect(yielded).to be_truthy
     end
 
     it "should not set Content-Digest if body is empty" do
@@ -61,19 +61,19 @@ describe "rack" do
 
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      request.env['HTTP_AUTHORIZATION'].should start_with("EyHmac")
-      request.env.should_not have_key('HTTP_CONTENT_DIGEST')
-      Time.parse(request.env['HTTP_DATE']).should_not be_nil
+      expect(request.env['HTTP_AUTHORIZATION']).to start_with("EyHmac")
+      expect(request.env).not_to have_key('HTTP_CONTENT_DIGEST')
+      expect(Time.parse(request.env['HTTP_DATE'])).not_to be_nil
 
       yielded = false
 
-      Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
-        key_id.should == key_id
+      expect(Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+        expect(key_id).to eq(key_id)
         yielded = true
         key_secret
-      end.should be_true
+      end).to be_truthy
 
-      yielded.should be_true
+      expect(yielded).to be_truthy
     end
 
     context "with a request" do
@@ -103,7 +103,7 @@ describe "rack" do
         run app
       end
 
-      client.get("/resource").status.should == 200
+      expect(client.get("/resource").status).to eq(200)
     end
 
     it "should accept a SHA256 signature" do # default
@@ -120,7 +120,7 @@ describe "rack" do
         run app
       end
 
-      client.get("/resource").status.should == 200
+      expect(client.get("/resource").status).to eq(200)
     end
 
     it "should accept multiple digest signatures" do # default
@@ -140,7 +140,7 @@ describe "rack" do
         c.adapter(:rack, app)
       end
 
-      connection.get("/resources").status.should == 200
+      expect(connection.get("/resources").status).to eq(200)
     end
   end
 end
