@@ -19,5 +19,5 @@ end
 
 group(:faraday) do
   gem 'faraday'
-  gem 'faraday_middleware', "~> 0.8.0"
+  gem 'faraday_middleware', "~> 0.9.0"
 end
