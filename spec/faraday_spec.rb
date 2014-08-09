@@ -108,9 +108,8 @@ describe "faraday" do
         [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
       end
 
-      request_env = nil
       connection = Faraday.new do |c|
-        c.request :hmac, key_id, key_secret, sign_with: :sha1
+        c.use :hmac, key_id, key_secret, sign_with: :sha1
         c.adapter(:rack, app)
       end
 
@@ -128,9 +127,8 @@ describe "faraday" do
         [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
       end
 
-      request_env = nil
       connection = Faraday.new do |c|
-        c.request :hmac, key_id, key_secret
+        c.use :hmac, key_id, key_secret
         c.adapter(:rack, app)
       end
 
@@ -148,9 +146,8 @@ describe "faraday" do
         [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
       end
 
-      request_env = nil
       connection = Faraday.new do |c|
-        c.request :hmac, key_id, key_secret
+        c.use :hmac, key_id, key_secret
         c.adapter(:rack, app)
       end
 
@@ -174,9 +171,8 @@ describe "faraday" do
         })
       end
 
-      request_env = nil
       connection = Faraday.new do |c|
-        c.request :hmac, key_id, key_secret
+        c.use :hmac, key_id, key_secret
         c.adapter(:rack, app)
       end
 

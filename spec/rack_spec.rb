@@ -134,9 +134,8 @@ describe "rack" do
         [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
       end
 
-      request_env = nil
       connection = Faraday.new do |c|
-        c.request :hmac, key_id, key_secret, digest: [:sha1, :sha256]
+        c.use :hmac, key_id, key_secret, digest: [:sha1, :sha256]
         c.adapter(:rack, app)
       end
 

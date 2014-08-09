@@ -1,17 +1,8 @@
 require 'ey-hmac'
 require 'faraday'
 
-if Faraday.respond_to? :register_middleware
-  Faraday.register_middleware(:request, {:hmac => lambda { Ey::Hmac::Faraday }})
-end
-
-# Request middleware that performs HMAC request signing
-require 'faraday_middleware/response_middleware'
-
-class Ey::Hmac::Faraday < FaradayMiddleware::ResponseMiddleware
-  dependency do
-    require 'ey-hmac' unless defined?(Ey::Hmac)
-  end
+class Ey::Hmac::Faraday < Faraday::Response::Middleware
+  dependency("ey-hmac")
 
   attr_reader :key_id, :key_secret, :options
 
@@ -27,4 +18,4 @@ class Ey::Hmac::Faraday < FaradayMiddleware::ResponseMiddleware
   end
 end
 
-Faraday::Request.register_middleware(:hmac => lambda { Ey::Hmac::Faraday })
+Faraday::Middleware.register_middleware :hmac => Ey::Hmac::Faraday
