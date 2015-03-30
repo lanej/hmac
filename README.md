@@ -41,7 +41,7 @@ end
 require 'ey-hmac/faraday'
 
 connection = Faraday.new do |c|
-  c.request :hmac, key_id, key_secret
+  c.use :hmac, key_id, key_secret
   c.adapter(:rack, app)
 end
 ```
