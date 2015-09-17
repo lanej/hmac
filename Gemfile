@@ -4,8 +4,6 @@ source 'https://rubygems.org'
 gemspec
 
 group(:test) do
-  gem 'guard-bundler'
-  gem 'guard-rspec', '~> 4.2'
   gem 'pry-nav'
   gem 'rspec', '~> 3.3'
 end
@@ -18,4 +16,5 @@ end
 
 group(:faraday) do
   gem 'faraday', '~> 0.9'
+  gem 'faraday_middleware'
 end

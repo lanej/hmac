@@ -10,16 +10,21 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   def content_digest
     if existing = %w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest].inject(nil) { |r,h| r || request[:request_headers][h] }
       existing
-    elsif digestable = body && Digest::MD5.hexdigest(body)
-      request[:request_headers]['Content-Digest'] = digestable
-    else nil
+    elsif body
+      digestable = if body.respond_to?(:rewind)
+                     body.rewind
+                     body.read.tap { |_| body.rewind }
+                   else
+                     body.to_s
+                   end
+
+      request[:request_headers]['Content-Digest'] = Digest::MD5.hexdigest(digestable)
     end
   end
 
   def body
     if request[:body] && request[:body].to_s != ""
       request[:body]
-    else nil
     end
   end
 
@@ -33,7 +38,8 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def sign!(key_id, key_secret)
-    %w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type].inject(nil){|r,h| request[:request_headers][h]}
+    %w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type].inject(nil) { |r,h| request[:request_headers][h] }
+
     if options[:version]
       request[:request_headers]['X-Signature-Version'] = options[:version]
     end
