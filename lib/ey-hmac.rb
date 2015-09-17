@@ -3,6 +3,7 @@ require "ey-hmac/version"
 require 'base64'
 require 'digest/md5'
 require 'openssl'
+require 'time'
 
 module Ey
   module Hmac
