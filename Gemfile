@@ -7,7 +7,7 @@ group(:test) do
   gem 'guard-bundler'
   gem 'guard-rspec', '~> 4.2'
   gem 'pry-nav'
-  gem 'rspec', '~> 2.99'
+  gem 'rspec', '~> 3.3'
 end
 
 group(:rack) do
@@ -17,5 +17,5 @@ group(:rack) do
 end
 
 group(:faraday) do
-  gem 'faraday', '~> 0.9.0'
+  gem 'faraday', '~> 0.9'
 end
