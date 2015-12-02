@@ -10,6 +10,7 @@ class Ey::Hmac::Adapter
 
   # @param [Object] request signer-specific request implementation
   # @option options [Integer] :version signature version
+  # @option options [Integer] :ttl (nil) duration during which HMAC is valid after signed date
   # @option options [String] :authorization_header ('Authorization') Authorization header key.
   # @option options [String] :server ('EyHmac') service name prefixed to {#authorization}. set to {#service}
   # @option options [Symbol] :sign_with (:sha_256) outgoing signature digest algorithm. See {OpenSSL::Digest#new}
@@ -17,6 +18,7 @@ class Ey::Hmac::Adapter
   def initialize(request, options={})
     @request, @options = request, options
 
+    @ttl                  = options[:ttl]
     @authorization_header = options[:authorization_header] || 'Authorization'
     @service              = options[:service] || 'EyHmac'
     @sign_with            = options[:sign_with] || :sha256
@@ -119,6 +121,14 @@ class Ey::Hmac::Adapter
 
     unless key_secret = block.call(key_id)
       raise(Ey::Hmac::MissingSecret, "Failed to find secret matching #{key_id.inspect}")
+    end
+
+    unless @ttl.nil?
+      expiry = Time.parse(date).to_i + @ttl
+      current_time = Time.now.to_i
+      unless expiry > current_time
+        raise(Ey::Hmac::ExpiredHmac, "Signature has expired passed #{expiry}. Current time is #{current_time}")
+      end
     end
 
     calculated_signatures = self.accept_digests.map { |ad| signature(key_secret, ad) }
