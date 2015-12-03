@@ -12,6 +12,7 @@ module Ey
     MissingSecret        = Class.new(Error)
     MissingAuthorization = Class.new(Error)
     SignatureMismatch    = Class.new(Error)
+    ExpiredHmac          = Class.new(Error)
 
     autoload :Adapter, "ey-hmac/adapter"
     autoload :Faraday, "ey-hmac/faraday"
