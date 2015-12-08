@@ -37,7 +37,9 @@ class Ey::Hmac::Adapter
   # @param [String] signature digest hash function. Defaults to #sign_with
   # @return [String] HMAC signature of {#request}
   def signature(key_secret, digest = self.sign_with)
-    Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new(digest.to_s), key_secret, canonicalize)).strip
+    Base64.encode64(
+      OpenSSL::HMAC.digest(
+        OpenSSL::Digest.new(digest.to_s), key_secret, canonicalize)).strip
   end
 
   # @param [String] key_id public HMAC key
@@ -112,33 +114,29 @@ class Ey::Hmac::Adapter
 
   # @see Ey::Hmac#authenticate!
   def authenticated!(&block)
-    unless authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
-      raise(Ey::Hmac::MissingAuthorization, "Failed to parse authorization_signature #{authorization_signature}")
+    key_id, signature_value = check_signature!
+    key_secret = block.call(key_id)
+
+    unless key_secret
+      raise Ey::Hmac::MissingSecret,
+        "Failed to find secret matching #{key_id.inspect}"
     end
 
-    key_id          = authorization_match[1]
-    signature_value = authorization_match[2]
+    check_ttl!
 
-    unless key_secret = block.call(key_id)
-      raise(Ey::Hmac::MissingSecret, "Failed to find secret matching #{key_id.inspect}")
+    calculated_signatures = accept_digests.map { |ad| signature(key_secret, ad) }
+    matching_signature = calculated_signatures.any? { |cs| secure_compare(signature_value, cs) }
+
+    unless matching_signature
+      raise Ey::Hmac::SignatureMismatch,
+        "Calculated signature #{signature_value} does not match #{calculated_signatures.inspect} using #{canonicalize.inspect}"
     end
 
-    unless @ttl.nil?
-      expiry = Time.parse(date).to_i + @ttl
-      current_time = Time.now.to_i
-      unless expiry > current_time
-        raise(Ey::Hmac::ExpiredHmac, "Signature has expired passed #{expiry}. Current time is #{current_time}")
-      end
-    end
-
-    calculated_signatures = self.accept_digests.map { |ad| signature(key_secret, ad) }
-
-    unless calculated_signatures.any? { |cs| secure_compare(signature_value, cs) }
-      raise(Ey::Hmac::SignatureMismatch, "Calculated signature #{signature_value} does not match #{calculated_signatures.inspect} using #{canonicalize.inspect}")
-    end
     true
   end
   alias authenticate! authenticated!
+
+  protected
 
   # Constant time string comparison.
   # pulled from https://github.com/rack/rack/blob/master/lib/rack/utils.rb#L399
@@ -150,5 +148,28 @@ class Ey::Hmac::Adapter
     r, i = 0, -1
     b.each_byte { |v| r |= v ^ l[i+=1] }
     r == 0
+  end
+
+  def check_ttl!
+    if @ttl && date
+      expiry       = Time.parse(date).to_i + @ttl
+      current_time = Time.now.to_i
+
+      unless expiry > current_time
+        raise Ey::Hmac::ExpiredHmac,
+          "Signature has expired passed #{expiry}. Current time is #{current_time}"
+      end
+    end
+  end
+
+  def check_signature!
+    authorization_match = AUTHORIZATION_REGEXP.match(authorization_signature)
+
+    unless authorization_match
+      raise Ey::Hmac::MissingAuthorization,
+        "Failed to parse authorization_signature #{authorization_signature}"
+    end
+
+    [authorization_match[1], authorization_match[2]]
   end
 end

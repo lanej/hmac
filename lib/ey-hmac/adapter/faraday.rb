@@ -4,21 +4,29 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def content_type
-    %w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type].inject(nil) { |r,h| r || request[:request_headers][h] }
+    @content_type ||= find_header(
+      *%w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type]
+    )
   end
 
   def content_digest
-    if existing = %w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest].inject(nil) { |r,h| r || request[:request_headers][h] }
-      existing
-    elsif body
-      digestable = if body.respond_to?(:rewind)
-                     body.rewind
-                     body.read.tap { |_| body.rewind }
-                   else
-                     body.to_s
-                   end
+    @content_digest ||= find_header(
+      *%w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest]
+    )
+  end
 
-      request[:request_headers]['Content-Digest'] = Digest::MD5.hexdigest(digestable)
+  def set_content_digest
+    return if content_digest
+
+    digestable = if body.respond_to?(:rewind)
+                   body.rewind
+                   body.read.tap { |_| body.rewind }
+                 else
+                   body.to_s
+                 end
+
+    if digestable && digestable != ""
+      @content_digest = request[:request_headers]['Content-Digest'] = Digest::MD5.hexdigest(digestable)
     end
   end
 
@@ -29,8 +37,13 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def date
-    existing = %w[DATE Date].inject(nil) { |r,h| r || request[h] }
-    existing || (request[:request_headers]['Date'] = Time.now.httpdate)
+    find_header(*%w[DATE Date])
+  end
+
+  def set_date
+    unless date
+      request[:request_headers]['Date'] = Time.now.httpdate
+    end
   end
 
   def path
@@ -38,7 +51,8 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def sign!(key_id, key_secret)
-    %w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type].inject(nil) { |r,h| request[:request_headers][h] }
+    set_content_digest
+    set_date
 
     if options[:version]
       request[:request_headers]['X-Signature-Version'] = options[:version]
@@ -48,6 +62,14 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def authorization_signature
-    %w[Authorization AUTHORIZATION].inject(nil){|r, h| r || request[:request_headers][h]}
+    find_header(*%w[Authorization AUTHORIZATION])
+  end
+
+  private
+
+  def find_header(*keys)
+    value = nil
+    keys.find { |k| value = request[:request_headers][k] }
+    value
   end
 end
