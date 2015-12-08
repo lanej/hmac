@@ -3,10 +3,7 @@ require 'rack'
 class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
   def initialize(request, options)
     super
-    @request = if request.is_a?(Hash)
-                 ::Rack::Request.new(request)
-               else request
-               end
+    @request = request.is_a?(Hash) ? ::Rack::Request.new(request) : request
   end
 
   def method
@@ -38,7 +35,11 @@ class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
   end
 
   def date
-    request.env['HTTP_DATE'] ||= Time.now.httpdate
+    request.env['HTTP_DATE']
+  end
+
+  def set_date
+    request.env['HTTP_DATE'] = Time.now.httpdate
   end
 
   def path
@@ -46,6 +47,9 @@ class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
   end
 
   def sign!(key_id, key_secret)
+    set_date
+    set_content_digest
+
     if options[:version]
       request.env['HTTP_X_SIGNATURE_VERSION'] = options[:version]
     end
