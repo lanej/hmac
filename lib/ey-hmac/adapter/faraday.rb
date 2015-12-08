@@ -4,15 +4,15 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def content_type
-    @content_type ||= map_find(
-      %w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type]
-    ) { |h| request[:request_headers][h] }
+    @content_type ||= find_header(
+      *%w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type]
+    )
   end
 
   def content_digest
-    @content_digest ||= map_find(
-      %w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest]
-    ) { |h| request[:request_headers][h] }
+    @content_digest ||= find_header(
+      *%w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest]
+    )
   end
 
   def set_content_digest
@@ -37,7 +37,7 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def date
-    map_find(%w[DATE Date]) { |h| request[:request_headers][h] }
+    find_header(*%w[DATE Date])
   end
 
   def set_date
@@ -62,17 +62,14 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   end
 
   def authorization_signature
-    map_find(%w[Authorization AUTHORIZATION]) { |h| request[:request_headers][h] }
+    find_header(*%w[Authorization AUTHORIZATION])
   end
 
   private
 
-  def map_find(keys)
+  def find_header(*keys)
     value = nil
-    keys.find { |k|
-      value = yield(k)
-      break if value
-    }
+    keys.find { |k| value = request[:request_headers][k] }
     value
   end
 end
