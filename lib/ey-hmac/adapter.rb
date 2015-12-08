@@ -44,6 +44,7 @@ class Ey::Hmac::Adapter
   # @param [String] key_secret private HMAC key
   # @return [String] HMAC header value of {#request}
   def authorization(key_id, key_secret)
+    set_content_digest
     "#{service} #{key_id}:#{signature(key_secret, sign_with)}"
   end
 
