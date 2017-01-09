@@ -37,7 +37,7 @@ class Ey::Hmac::Adapter
   # @param [String] signature digest hash function. Defaults to #sign_with
   # @return [String] HMAC signature of {#request}
   def signature(key_secret, digest = self.sign_with)
-    Base64.encode64(
+    Base64.strict_encode64(
       OpenSSL::HMAC.digest(
         OpenSSL::Digest.new(digest.to_s), key_secret, canonicalize)).strip
   end
