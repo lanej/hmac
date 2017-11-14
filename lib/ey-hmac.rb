@@ -23,12 +23,10 @@ module Ey
     end
 
     def self.default_adapter
-      @default_adapter ||= begin
-                             if defined?(Rack) || defined?(Rails)
-                               Ey::Hmac::Adapter::Rack
-                             elsif defined?(Faraday)
-                               Ey::Hmac::Adapter::Rails
-                             end
+      @default_adapter ||= if defined?(::Rack) || defined?(::Rails)
+                             Ey::Hmac::Adapter::Rack
+                           elsif defined?(::Faraday)
+                             Ey::Hmac::Adapter::Faraday
                            end
     end
 
