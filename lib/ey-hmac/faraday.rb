@@ -1,8 +1,8 @@
 require 'ey-hmac'
 require 'faraday'
 
-class Ey::Hmac::Faraday < Faraday::Response::Middleware
-  dependency("ey-hmac")
+class Ey::Hmac::Faraday < Faraday::Middleware
+  dependency("ey-hmac") if respond_to?(:dependency)
 
   attr_reader :key_id, :key_secret, :options
 
