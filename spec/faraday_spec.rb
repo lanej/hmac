@@ -38,8 +38,7 @@ describe "faraday" do
     end
 
     it "signs and reads a request" do
-      request = Faraday::Request.new.tap { |r|
-        r.method  = :get
+      request = Faraday::Request.create(:get) { |r|
         r.path    = "/auth"
         r.body    = "{1: 2}"
         r.headers = {"Content-Type" => "application/xml"}
@@ -49,8 +48,8 @@ describe "faraday" do
 
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      expect(request[:request_headers]['Authorization']).to        start_with("EyHmac")
-      expect(request[:request_headers]['Content-Digest']).to       eq(Digest::MD5.hexdigest(request[:body]))
+      expect(request[:request_headers]['Authorization']).to start_with("EyHmac")
+      expect(request[:request_headers]['Content-Digest']).to eq(Digest::MD5.hexdigest(request[:body]))
       expect(Time.parse(request[:request_headers]['Date'])).not_to be_nil
 
       yielded = false
@@ -65,8 +64,7 @@ describe "faraday" do
     end
 
     it "does not set Content-Digest if body is nil" do
-      request = Faraday::Request.new.tap { |r|
-        r.method  = :get
+      request = Faraday::Request.create(:get) { |r|
         r.path    = "/auth"
         r.body    = nil
         r.headers = {"Content-Type" => "application/xml"}
@@ -92,8 +90,7 @@ describe "faraday" do
     end
 
     it "does not set Content-Digest if body is empty" do
-      request = Faraday::Request.new.tap do |r|
-        r.method = :get
+      request = Faraday::Request.create(:get) do |r|
         r.path = "/auth"
         r.body = ""
         r.headers = {"Content-Type" => "application/xml"}
@@ -118,8 +115,7 @@ describe "faraday" do
 
     context "with a request" do
       let!(:request) do
-        Faraday::Request.new.tap do |r|
-          r.method = :get
+        Faraday::Request.create(:get) do |r|
           r.path = "/auth"
           r.body = "{1: 2}"
           r.headers = {"Content-Type" => "application/xml"}
