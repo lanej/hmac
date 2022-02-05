@@ -17,6 +17,6 @@ group(:rack) do
 end
 
 group(:faraday) do
-  gem 'faraday', '~> 0.9'
+  gem 'faraday', '~> 1.3'
   gem 'faraday_middleware'
 end
