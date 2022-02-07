@@ -1,20 +1,22 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
-describe "faraday" do
+describe 'faraday' do
   before(:all) { Bundler.require(:faraday) }
 
   let!(:key_id)     { SecureRandom.hex(8) }
   let!(:key_secret) { SecureRandom.hex(16) }
 
-  describe "adapter" do
+  describe 'adapter' do
     let!(:adapter) { Ey::Hmac::Adapter::Faraday }
 
-    it "signs a multipart post" do
+    it 'signs a multipart post' do
       app = lambda do |env|
         authenticated = Ey::Hmac.authenticate!(env, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
           (auth_id == key_id) && key_secret
         end
-        [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+        [(authenticated ? 200 : 401), { 'Content-Type' => 'text/plain' }, []]
       end
 
       require 'ey-hmac/faraday'
@@ -28,113 +30,115 @@ describe "faraday" do
         c.adapter(:rack, app)
       end
 
-      tempfile = Tempfile.new("hmac")
+      tempfile = Tempfile.new('hmac')
       tempfile.write SecureRandom.hex(512)
       tempfile.close
 
       expect(
-        connection.post { |req| req.body = {"output" => Faraday::UploadIO.new(tempfile.path, "text/plain")} }.status
+        connection.post { |req| req.body = { 'output' => Faraday::UploadIO.new(tempfile.path, 'text/plain') } }.status
       ).to eq(200)
     end
 
-    it "signs and reads a request" do
-      request = Faraday::Request.create(:get) { |r|
-        r.path    = "/auth"
-        r.body    = "{1: 2}"
-        r.headers = {"Content-Type" => "application/xml"}
-      }.to_env(
-        Faraday::Connection.new("http://localhost")
+    it 'signs and reads a request' do
+      request = Faraday::Request.create(:get) do |r|
+        r.path    = '/auth'
+        r.body    = '{1: 2}'
+        r.headers = { 'Content-Type' => 'application/xml' }
+      end.to_env(
+        Faraday::Connection.new('http://localhost')
       )
 
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      expect(request[:request_headers]['Authorization']).to start_with("EyHmac")
+      expect(request[:request_headers]['Authorization']).to start_with('EyHmac')
       expect(request[:request_headers]['Content-Digest']).to eq(Digest::MD5.hexdigest(request[:body]))
       expect(Time.parse(request[:request_headers]['Date'])).not_to be_nil
 
       yielded = false
 
-      expect(Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+      expect(Ey::Hmac).to be_authenticated(request, adapter: adapter) do |key_id|
         expect(key_id).to eq(key_id)
         yielded = true
         key_secret
-      end).to be_truthy
+      end
 
       expect(yielded).to be_truthy
     end
 
-    it "does not set Content-Digest if body is nil" do
-      request = Faraday::Request.create(:get) { |r|
-        r.path    = "/auth"
+    it 'does not set Content-Digest if body is nil' do
+      request = Faraday::Request.create(:get) do |r|
+        r.path    = '/auth'
         r.body    = nil
-        r.headers = {"Content-Type" => "application/xml"}
-      }.to_env(
-        Faraday::Connection.new("http://localhost")
+        r.headers = { 'Content-Type' => 'application/xml' }
+      end.to_env(
+        Faraday::Connection.new('http://localhost')
       )
 
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      expect(request[:request_headers]['Authorization']).to start_with("EyHmac")
+      expect(request[:request_headers]['Authorization']).to start_with('EyHmac')
       expect(request[:request_headers]).not_to have_key('Content-Digest')
       expect(Time.parse(request[:request_headers]['Date'])).not_to be_nil
 
       yielded = false
 
-      expect(Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+      expect(Ey::Hmac).to be_authenticated(request, adapter: adapter) do |key_id|
         expect(key_id).to eq(key_id)
         yielded = true
         key_secret
-      end).to be_truthy
+      end
 
       expect(yielded).to be_truthy
     end
 
-    it "does not set Content-Digest if body is empty" do
+    it 'does not set Content-Digest if body is empty' do
       request = Faraday::Request.create(:get) do |r|
-        r.path = "/auth"
-        r.body = ""
-        r.headers = {"Content-Type" => "application/xml"}
-      end.to_env(Faraday::Connection.new("http://localhost"))
+        r.path = '/auth'
+        r.body = ''
+        r.headers = { 'Content-Type' => 'application/xml' }
+      end.to_env(Faraday::Connection.new('http://localhost'))
 
       Ey::Hmac.sign!(request, key_id, key_secret, adapter: adapter)
 
-      expect(request[:request_headers]['Authorization']).to        start_with("EyHmac")
+      expect(request[:request_headers]['Authorization']).to        start_with('EyHmac')
       expect(request[:request_headers]).not_to                     have_key('Content-Digest')
-      #expect(Time.parse(request[:request_headers]['Date'])).not_to be_nil
+      # expect(Time.parse(request[:request_headers]['Date'])).not_to be_nil
 
       yielded = false
 
-      expect(Ey::Hmac.authenticated?(request, adapter: adapter) do |key_id|
+      expect(Ey::Hmac).to be_authenticated(request, adapter: adapter) do |key_id|
         expect(key_id).to eq(key_id)
         yielded = true
         key_secret
-      end).to be_truthy
+      end
 
       expect(yielded).to be_truthy
     end
 
-    context "with a request" do
+    context 'with a request' do
       let!(:request) do
         Faraday::Request.create(:get) do |r|
-          r.path = "/auth"
-          r.body = "{1: 2}"
-          r.headers = {"Content-Type" => "application/xml"}
-        end.to_env(Faraday::Connection.new("http://localhost"))
+          r.path = '/auth'
+          r.body = '{1: 2}'
+          r.headers = { 'Content-Type' => 'application/xml' }
+        end.to_env(Faraday::Connection.new('http://localhost'))
       end
-      include_examples "authentication"
+
+      include_examples 'authentication'
     end
   end
 
-  describe "middleware" do
-    it "accepts a SHA1 signature" do
+  describe 'middleware' do
+    it 'accepts a SHA1 signature' do
       require 'ey-hmac/faraday'
       Bundler.require(:rack)
 
       app = lambda do |env|
-        authenticated = Ey::Hmac.authenticated?(env, accept_digests: :sha1, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+        authenticated = Ey::Hmac.authenticated?(env, accept_digests: :sha1,
+                                                     adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
           (auth_id == key_id) && key_secret
         end
-        [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+        [(authenticated ? 200 : 401), { 'Content-Type' => 'text/plain' }, []]
       end
 
       connection = Faraday.new do |c|
@@ -142,10 +146,10 @@ describe "faraday" do
         c.adapter(:rack, app)
       end
 
-      expect(connection.get("/resources").status).to eq(200)
+      expect(connection.get('/resources').status).to eq(200)
     end
 
-    it "accepts a SHA256 signature" do # default
+    it 'accepts a SHA256 signature' do # default
       require 'ey-hmac/faraday'
       Bundler.require(:rack)
 
@@ -153,7 +157,7 @@ describe "faraday" do
         authenticated = Ey::Hmac.authenticated?(env, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
           (auth_id == key_id) && key_secret
         end
-        [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+        [(authenticated ? 200 : 401), { 'Content-Type' => 'text/plain' }, []]
       end
 
       connection = Faraday.new do |c|
@@ -161,18 +165,19 @@ describe "faraday" do
         c.adapter(:rack, app)
       end
 
-      expect(connection.get("/resources").status).to eq(200)
+      expect(connection.get('/resources').status).to eq(200)
     end
 
-    it "accepts multiple digest signatures" do # default
+    it 'accepts multiple digest signatures' do # default
       require 'ey-hmac/faraday'
       Bundler.require(:rack)
 
       app = lambda do |env|
-        authenticated = Ey::Hmac.authenticated?(env, accept_digests: [:sha1, :sha256], adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
+        authenticated = Ey::Hmac.authenticated?(env, accept_digests: %i[sha1 sha256],
+                                                     adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
           (auth_id == key_id) && key_secret
         end
-        [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+        [(authenticated ? 200 : 401), { 'Content-Type' => 'text/plain' }, []]
       end
 
       connection = Faraday.new do |c|
@@ -180,23 +185,24 @@ describe "faraday" do
         c.adapter(:rack, app)
       end
 
-      expect(connection.get("/resources").status).to eq(200)
+      expect(connection.get('/resources').status).to eq(200)
     end
 
-    it "signs empty request" do
+    it 'signs empty request' do
       require 'ey-hmac/faraday'
       Bundler.require(:rack)
 
-      _key_id, _key_secret = key_id, key_secret
+      outer_key_id = key_id
+      outer_key_secret = key_secret
       app = Rack::Builder.new do
         use Rack::Config do |env|
-          env["CONTENT_TYPE"] ||= "text/html"
+          env['CONTENT_TYPE'] ||= 'text/html'
         end
-        run(lambda {|env|
+        run(lambda { |env|
           authenticated = Ey::Hmac.authenticate!(env, adapter: Ey::Hmac::Adapter::Rack) do |auth_id|
-            (auth_id == _key_id) && _key_secret
+            (auth_id == outer_key_id) && outer_key_secret
           end
-          [(authenticated ? 200 : 401), {"Content-Type" => "text/plain"}, []]
+          [(authenticated ? 200 : 401), { 'Content-Type' => 'text/plain' }, []]
         })
       end
 
@@ -206,10 +212,10 @@ describe "faraday" do
       end
 
       expect(connection.get do |req|
-        req.path    = "/resource"
+        req.path    = '/resource'
         req.body    = nil
-        req.params  = {"a" => "1"}
-        req.headers = {"Content-Type" => "application/x-www-form-urlencoded"}
+        req.params  = { 'a' => '1' }
+        req.headers = { 'Content-Type' => 'application/x-www-form-urlencoded' }
       end.status).to eq(200)
     end
   end

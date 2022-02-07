@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 # This class is responsible for forming the canonical string to used to sign requests
 # @abstract override methods {#method}, {#path}, {#body}, {#content_type} and {#content_digest}
 class Ey::Hmac::Adapter
-  AUTHORIZATION_REGEXP = /\w+ ([^:]+):(.+)$/
+  AUTHORIZATION_REGEXP = /\w+ ([^:]+):(.+)$/.freeze
 
-  autoload :Rack, "ey-hmac/adapter/rack"
-  autoload :Faraday, "ey-hmac/adapter/faraday"
+  autoload :Rack, 'ey-hmac/adapter/rack'
+  autoload :Faraday, 'ey-hmac/adapter/faraday'
 
   attr_reader :request, :options, :authorization_header, :service, :sign_with, :accept_digests
 
@@ -15,8 +17,9 @@ class Ey::Hmac::Adapter
   # @option options [String] :server ('EyHmac') service name prefixed to {#authorization}. set to {#service}
   # @option options [Symbol] :sign_with (:sha_256) outgoing signature digest algorithm. See {OpenSSL::Digest#new}
   # @option options [Array] :accepted_digests ([:sha_256]) accepted incoming signature digest algorithm. See {OpenSSL::Digest#new}
-  def initialize(request, options={})
-    @request, @options = request, options
+  def initialize(request, options = {})
+    @request = request
+    @options = options
 
     @ttl                  = options[:ttl]
     @authorization_header = options[:authorization_header] || 'Authorization'
@@ -36,10 +39,12 @@ class Ey::Hmac::Adapter
   # @param [String] key_secret private HMAC key
   # @param [String] signature digest hash function. Defaults to #sign_with
   # @return [String] HMAC signature of {#request}
-  def signature(key_secret, digest = self.sign_with)
+  def signature(key_secret, digest = sign_with)
     Base64.strict_encode64(
       OpenSSL::HMAC.digest(
-        OpenSSL::Digest.new(digest.to_s), key_secret, canonicalize)).strip
+        OpenSSL::Digest.new(digest.to_s), key_secret, canonicalize
+      )
+    ).strip
   end
 
   # @param [String] key_id public HMAC key
@@ -106,7 +111,7 @@ class Ey::Hmac::Adapter
   # @yieldparam key_id [String] public HMAC key
   # @return [Boolean] true if block yields matching private key and signature matches, else false
   # @see #authenticated!
-  def authenticated?(options={}, &block)
+  def authenticated?(_options = {}, &block)
     authenticated!(&block)
   rescue Ey::Hmac::Error
     false
@@ -119,7 +124,7 @@ class Ey::Hmac::Adapter
 
     unless key_secret
       raise Ey::Hmac::MissingSecret,
-        "Failed to find secret matching #{key_id.inspect}"
+            "Failed to find secret matching #{key_id.inspect}"
     end
 
     check_ttl!
@@ -129,7 +134,7 @@ class Ey::Hmac::Adapter
 
     unless matching_signature
       raise Ey::Hmac::SignatureMismatch,
-        "Calculated signature #{signature_value} does not match #{calculated_signatures.inspect} using #{canonicalize.inspect}"
+            "Calculated signature #{signature_value} does not match #{calculated_signatures.inspect} using #{canonicalize.inspect}"
     end
 
     true
@@ -143,11 +148,12 @@ class Ey::Hmac::Adapter
   def secure_compare(a, b)
     return false unless a.bytesize == b.bytesize
 
-    l = a.unpack("C*")
+    l = a.unpack('C*')
 
-    r, i = 0, -1
-    b.each_byte { |v| r |= v ^ l[i+=1] }
-    r == 0
+    r = 0
+    i = -1
+    b.each_byte { |v| r |= v ^ l[i += 1] }
+    r.zero?
   end
 
   def check_ttl!
@@ -157,7 +163,7 @@ class Ey::Hmac::Adapter
 
       unless expiry > current_time
         raise Ey::Hmac::ExpiredHmac,
-          "Signature has expired passed #{expiry}. Current time is #{current_time}"
+              "Signature has expired passed #{expiry}. Current time is #{current_time}"
       end
     end
   end
@@ -167,7 +173,7 @@ class Ey::Hmac::Adapter
 
     unless authorization_match
       raise Ey::Hmac::MissingAuthorization,
-        "Failed to parse authorization_signature #{authorization_signature}"
+            "Failed to parse authorization_signature #{authorization_signature}"
     end
 
     [authorization_match[1], authorization_match[2]]

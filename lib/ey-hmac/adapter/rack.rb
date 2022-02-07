@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rack'
 
 class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
@@ -19,18 +21,15 @@ class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
   end
 
   def set_content_digest
-    if body
-      request.env['HTTP_CONTENT_DIGEST'] = Digest::MD5.hexdigest(body)
-    end
+    request.env['HTTP_CONTENT_DIGEST'] = Digest::MD5.hexdigest(body) if body
   end
 
   def body
-    if request.env["rack.input"]
-      request.env["rack.input"].rewind
-      body = request.env["rack.input"].read
-      request.env["rack.input"].rewind
-      body == "" ? nil : body
-    else nil
+    if request.env['rack.input']
+      request.env['rack.input'].rewind
+      body = request.env['rack.input'].read
+      request.env['rack.input'].rewind
+      body == '' ? nil : body
     end
   end
 
@@ -50,9 +49,7 @@ class Ey::Hmac::Adapter::Rack < Ey::Hmac::Adapter
     set_date
     set_content_digest
 
-    if options[:version]
-      request.env['HTTP_X_SIGNATURE_VERSION'] = options[:version]
-    end
+    request.env['HTTP_X_SIGNATURE_VERSION'] = options[:version] if options[:version]
 
     request.env["HTTP_#{authorization_header.to_s.upcase}"] = authorization(key_id, key_secret)
   end

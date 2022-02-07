@@ -5,6 +5,9 @@ source 'https://rubygems.org'
 # Specify your gem's dependencies in ey-hmac.gemspec
 gemspec
 
+gem 'rubocop', require: false
+gem 'rubocop-rspec', require: false
+
 group(:test) do
   gem 'pry-nav'
   gem 'rspec', '~> 3.3'

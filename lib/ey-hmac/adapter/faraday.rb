@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
   def method
     request[:method].to_s.upcase
@@ -5,13 +7,13 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
 
   def content_type
     @content_type ||= find_header(
-      *%w[CONTENT-TYPE CONTENT_TYPE Content-Type Content_Type]
+      'CONTENT-TYPE', 'CONTENT_TYPE', 'Content-Type', 'Content_Type'
     )
   end
 
   def content_digest
     @content_digest ||= find_header(
-      *%w[CONTENT-DIGEST CONTENT_DIGEST Content-Digest Content_Digest]
+      'CONTENT-DIGEST', 'CONTENT_DIGEST', 'Content-Digest', 'Content_Digest'
     )
   end
 
@@ -25,25 +27,21 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
                    body.to_s
                  end
 
-    if digestable && digestable != ""
+    if digestable && digestable != ''
       @content_digest = request[:request_headers]['Content-Digest'] = Digest::MD5.hexdigest(digestable)
     end
   end
 
   def body
-    if request[:body] && request[:body].to_s != ""
-      request[:body]
-    end
+    request[:body] if request[:body] && request[:body].to_s != ''
   end
 
   def date
-    find_header(*%w[DATE Date])
+    find_header('DATE', 'Date')
   end
 
   def set_date
-    unless date
-      request[:request_headers]['Date'] = Time.now.httpdate
-    end
+    request[:request_headers]['Date'] = Time.now.httpdate unless date
   end
 
   def path
@@ -54,15 +52,13 @@ class Ey::Hmac::Adapter::Faraday < Ey::Hmac::Adapter
     set_content_digest
     set_date
 
-    if options[:version]
-      request[:request_headers]['X-Signature-Version'] = options[:version]
-    end
+    request[:request_headers]['X-Signature-Version'] = options[:version] if options[:version]
 
     request[:request_headers][authorization_header] = authorization(key_id, key_secret)
   end
 
   def authorization_signature
-    find_header(*%w[Authorization AUTHORIZATION])
+    find_header('Authorization', 'AUTHORIZATION')
   end
 
   private

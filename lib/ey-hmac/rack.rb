@@ -1,10 +1,13 @@
+# frozen_string_literal: true
+
 # Request middleware that performs HMAC request signing
 class Ey::Hmac::Rack
   attr_reader :key_id, :key_secret, :options
 
   def initialize(app, key_id, key_secret, options = {})
     @app = app
-    @key_id, @key_secret = key_id, key_secret
+    @key_id = key_id
+    @key_secret = key_secret
     @options = options
   end
 
