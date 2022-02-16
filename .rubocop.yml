@@ -23,6 +23,8 @@ Style/ClassAndModuleChildren:
   EnforcedStyle: compact
 Metrics/MethodLength:
   Enabled: false
+Metrics/ClassLength:
+  Enabled: false
 RSpec/ExampleLength:
   Enabled: false
 RSpec/MultipleExpectations:

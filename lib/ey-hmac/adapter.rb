@@ -4,11 +4,19 @@
 # @abstract override methods {#method}, {#path}, {#body}, {#content_type} and {#content_digest}
 class Ey::Hmac::Adapter
   AUTHORIZATION_REGEXP = /\w+ ([^:]+):(.+)$/.freeze
+  DEFAULT_CANONICALIZE_WITH = %i[method content_type content_digest date path].freeze
 
   autoload :Rack, 'ey-hmac/adapter/rack'
   autoload :Faraday, 'ey-hmac/adapter/faraday'
 
-  attr_reader :request, :options, :authorization_header, :service, :sign_with, :accept_digests
+  attr_reader :request,
+              :options,
+              :authorization_header,
+              :service,
+              :sign_with,
+              :accept_digests,
+              :include_query_string,
+              :canonicalize_with
 
   # @param [Object] request signer-specific request implementation
   # @option options [Integer] :version signature version
@@ -16,6 +24,7 @@ class Ey::Hmac::Adapter
   # @option options [String] :authorization_header ('Authorization') Authorization header key.
   # @option options [String] :server ('EyHmac') service name prefixed to {#authorization}. set to {#service}
   # @option options [Symbol] :sign_with (:sha_256) outgoing signature digest algorithm. See {OpenSSL::Digest#new}
+  # @option options [Symbol] :include_query_string (false) canonicalize with the request query string.
   # @option options [Array] :accepted_digests ([:sha_256]) accepted incoming signature digest algorithm. See {OpenSSL::Digest#new}
   def initialize(request, options = {})
     @request = request
@@ -25,7 +34,11 @@ class Ey::Hmac::Adapter
     @authorization_header = options[:authorization_header] || 'Authorization'
     @service              = options[:service] || 'EyHmac'
     @sign_with            = options[:sign_with] || :sha256
-    @accept_digests       = Array(options[:accept_digests] || :sha256)
+    @include_query_string = options.fetch(:include_query_string, false)
+    @accept_digests = Array(options[:accept_digests] || :sha256)
+
+    @canonicalize_with = DEFAULT_CANONICALIZE_WITH
+    @canonicalize_with += :query_string if include_query_string
   end
 
   # In order for the server to correctly authorize the request, the client and server MUST AGREE on this format
@@ -33,7 +46,7 @@ class Ey::Hmac::Adapter
   # default canonical string formation is '{#method}\\n{#content_type}\\n{#content_digest}\\n{#date}\\n{#path}'
   # @return [String] canonical string used to form the {#signature}
   def canonicalize
-    [method, content_type, content_digest, date, path].join("\n")
+    canonicalize_with.map { |message| public_send(message) }.join("\n")
   end
 
   # @param [String] key_secret private HMAC key
@@ -129,8 +142,11 @@ class Ey::Hmac::Adapter
 
     check_ttl!
 
-    calculated_signatures = accept_digests.map { |ad| signature(key_secret, ad) }
-    matching_signature = calculated_signatures.any? { |cs| secure_compare(signature_value, cs) }
+    matching_signature =
+      accept_digests
+      .lazy
+      .map { |ad| signature(key_secret, ad) }
+      .any? { |cs| secure_compare(signature_value, cs) }
 
     raise Ey::Hmac::SignatureMismatch unless matching_signature
 
