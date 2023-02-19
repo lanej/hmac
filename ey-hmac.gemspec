@@ -18,9 +18,11 @@ Gem::Specification.new do |gem|
   gem.metadata['homepage_uri'] = gem.homepage
   gem.metadata['source_code_uri'] = "#{gem.homepage}/tree/v#{gem.version}"
 
-  gem.files         = `git ls-files`.split($INPUT_RECORD_SEPARATOR)
-  gem.executables   = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
-  gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
+  gem.files = Dir.chdir(__dir__) do
+    `git ls-files -z`.split("\x0").reject do |file|
+      file.start_with?(*%w[.git .rubocop Gemfile Rakefile ey-hmac.gemspec spec])
+    end
+  end
   gem.require_paths = ['lib']
   gem.license       = 'MIT'
 
